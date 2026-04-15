@@ -1,0 +1,13 @@
+node_modules
+*.log
+.DS_Store
+.env
+.env.local
+.eslintrc.js
+.gitignore
+tsconfig.json
+tsconfig.tsbuildinfo
+dist/tsconfig.tsbuildinfo
+dist/package.json
+nodes
+credentials

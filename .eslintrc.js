@@ -8,12 +8,17 @@ module.exports = {
 	},
 	parser: '@typescript-eslint/parser',
 	parserOptions: {
-		project: ['./tsconfig.json'],
 		sourceType: 'module',
 		extraFileExtensions: ['.json'],
 	},
 	ignorePatterns: ['.eslintrc.js', 'dist/**', 'node_modules/**', 'index.js'],
 	overrides: [
+		{
+			files: ['./credentials/**/*.ts', './nodes/**/*.ts'],
+			parserOptions: {
+				project: ['./tsconfig.json'],
+			},
+		},
 		{
 			files: ['package.json'],
 			plugins: ['eslint-plugin-n8n-nodes-base'],
