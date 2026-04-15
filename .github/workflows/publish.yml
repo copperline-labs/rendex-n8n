@@ -39,16 +39,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org/'
 
       - name: Install dependencies
-        run: npm ci || npm install
+        # --ignore-scripts skips native C++ compilation of transitive deps
+        # (notably `isolated-vm`, pulled in via n8n-workflow) which fails to
+        # build against current Node+V8 ABI. We only need n8n-workflow's
+        # `.d.ts` types for the TypeScript build; we never execute its
+        # runtime, so skipping the native compile is safe.
+        run: npm install --ignore-scripts
 
       - name: Verify tag matches package.json version
         if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
-          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
           PKG_VERSION=$(node -p "require('./package.json').version")
           if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
             echo "ERROR: tag v$TAG_VERSION does not match package.json version $PKG_VERSION"
