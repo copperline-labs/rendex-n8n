@@ -1,0 +1,63 @@
+{
+  "name": "n8n-nodes-rendex",
+  "version": "1.0.0",
+  "description": "n8n community node for Rendex — capture screenshots, generate PDFs, and render HTML via Rendex's rendering API",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "rendex",
+    "screenshot",
+    "pdf",
+    "html-to-image",
+    "rendering",
+    "web-capture"
+  ],
+  "license": "MIT",
+  "homepage": "https://rendex.dev",
+  "author": {
+    "name": "Copperline Labs LLC",
+    "email": "support@rendex.dev",
+    "url": "https://rendex.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/copperline-labs/rendex-n8n.git"
+  },
+  "bugs": {
+    "url": "https://github.com/copperline-labs/rendex-n8n/issues"
+  },
+  "engines": {
+    "node": ">=20.15"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && mkdir -p dist/nodes/Rendex dist/credentials && cp nodes/Rendex/*.svg dist/nodes/Rendex/ && cp credentials/*.svg dist/credentials/",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "bun run build && bun run lint"
+  },
+  "files": [
+    "dist",
+    "index.js"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/RendexApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Rendex/Rendex.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.32.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-n8n-nodes-base": "^1.16.3",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

@@ -1,0 +1,19 @@
+{
+	"node": "n8n-nodes-base.rendex",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Development", "Marketing", "Productivity"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://rendex.dev/docs/authentication"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://github.com/copperline-labs/rendex-n8n#readme"
+			}
+		]
+	},
+	"alias": ["screenshot", "pdf", "html", "render", "capture", "rendex"]
+}
