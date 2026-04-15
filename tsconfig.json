@@ -20,7 +20,7 @@
     "declaration": true,
     "sourceMap": true,
     "skipLibCheck": true,
-    "types": [],
+    "types": ["node"],
     "outDir": "./dist/"
   },
   "include": [
