@@ -36,7 +36,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint nodes credentials package.json",
     "lintfix": "eslint nodes credentials package.json --fix",
-    "prepublishOnly": "bun run build && bun run lint"
+    "prepublishOnly": "npm run build && npm run lint"
   },
   "files": [
     "dist",
