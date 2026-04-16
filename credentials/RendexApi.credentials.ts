@@ -47,7 +47,7 @@ export class RendexApi implements ICredentialType {
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials.baseUrl}}',
-			url: '/v1/jobs/credential-check',
+			url: '/v1/credential-check',
 			method: 'GET',
 		},
 		rules: [
