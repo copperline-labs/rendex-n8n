@@ -42,6 +42,9 @@ jobs:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org/'
 
+      - name: Upgrade npm to latest (Trusted Publishing OIDC needs npm >=11.5.1)
+        run: npm install -g npm@latest
+
       - name: Install dependencies
         # --ignore-scripts skips native C++ compilation of transitive deps
         # (notably `isolated-vm`, pulled in via n8n-workflow) which fails to
