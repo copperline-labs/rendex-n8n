@@ -39,11 +39,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org/'
 
-      - name: Upgrade npm to latest (Trusted Publishing OIDC needs npm >=11.5.1)
-        run: npm install -g npm@latest
+      - name: Upgrade npm to 11.x (Trusted Publishing OIDC needs >=11.5.1)
+        run: npm install -g npm@11 --force
 
       - name: Install dependencies
         # --ignore-scripts skips native C++ compilation of transitive deps
