@@ -558,6 +558,13 @@ export class Rendex implements INodeType {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 
+		// `requestDefaults.baseURL` on the node description only applies to
+		// declarative routing (credential test, routing: blocks). Programmatic
+		// httpRequestWithAuthentication does NOT inherit it, so URLs must be
+		// absolute. Resolve baseURL from the credential once per execution.
+		const credentials = await this.getCredentials('rendexApi');
+		const baseUrl = ((credentials.baseUrl as string) || 'https://api.rendex.dev').replace(/\/+$/, '');
+
 		for (let i = 0; i < items.length; i++) {
 			try {
 				const resource = this.getNodeParameter('resource', i) as string;
@@ -570,7 +577,7 @@ export class Rendex implements INodeType {
 						'rendexApi',
 						{
 							method: 'POST',
-							url: '/v1/screenshot/json',
+							url: `${baseUrl}/v1/screenshot/json`,
 							body,
 							json: true,
 						} as IHttpRequestOptions,
@@ -627,7 +634,7 @@ export class Rendex implements INodeType {
 						'rendexApi',
 						{
 							method: 'POST',
-							url: '/v1/screenshot',
+							url: `${baseUrl}/v1/screenshot`,
 							body,
 							json: true,
 						} as IHttpRequestOptions,
@@ -644,7 +651,7 @@ export class Rendex implements INodeType {
 						'rendexApi',
 						{
 							method: 'GET',
-							url: `/v1/jobs/${encodeURIComponent(jobId)}`,
+							url: `${baseUrl}/v1/jobs/${encodeURIComponent(jobId)}`,
 							json: true,
 						} as IHttpRequestOptions,
 					)) as IDataObject;
@@ -688,7 +695,7 @@ export class Rendex implements INodeType {
 						'rendexApi',
 						{
 							method: 'POST',
-							url: '/v1/screenshot/batch',
+							url: `${baseUrl}/v1/screenshot/batch`,
 							body,
 							json: true,
 						} as IHttpRequestOptions,
@@ -702,7 +709,7 @@ export class Rendex implements INodeType {
 						'rendexApi',
 						{
 							method: 'GET',
-							url: `/v1/batches/${encodeURIComponent(batchId)}`,
+							url: `${baseUrl}/v1/batches/${encodeURIComponent(batchId)}`,
 							json: true,
 						} as IHttpRequestOptions,
 					)) as IDataObject;
