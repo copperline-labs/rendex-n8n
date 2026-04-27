@@ -5,8 +5,9 @@ import type {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	JsonObject,
 } from 'n8n-workflow';
-import { NodeOperationError } from 'n8n-workflow';
+import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
 export class Rendex implements INodeType {
 	description: INodeTypeDescription = {
@@ -29,13 +30,6 @@ export class Rendex implements INodeType {
 				required: true,
 			},
 		],
-		requestDefaults: {
-			baseURL: '={{$credentials.baseUrl}}',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-			},
-		},
 		properties: [
 			// ─── Resource ──────────────────────────────────────────────
 			{
@@ -558,10 +552,6 @@ export class Rendex implements INodeType {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 
-		// `requestDefaults.baseURL` on the node description only applies to
-		// declarative routing (credential test, routing: blocks). Programmatic
-		// httpRequestWithAuthentication does NOT inherit it, so URLs must be
-		// absolute. Resolve baseURL from the credential once per execution.
 		const credentials = await this.getCredentials('rendexApi');
 		const baseUrl = ((credentials.baseUrl as string) || 'https://api.rendex.dev').replace(/\/+$/, '');
 
@@ -730,7 +720,10 @@ export class Rendex implements INodeType {
 					});
 					continue;
 				}
-				throw error;
+				if (error instanceof NodeOperationError || error instanceof NodeApiError) {
+					throw error;
+				}
+				throw new NodeApiError(this.getNode(), error as JsonObject, { itemIndex: i });
 			}
 		}
 
