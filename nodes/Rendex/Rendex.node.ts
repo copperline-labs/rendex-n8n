@@ -174,6 +174,20 @@ export class Rendex implements INodeType {
 				},
 				description: 'Markdown to render — converted to HTML server-side (max 5 MB)',
 			},
+			{
+				displayName: 'Template Data (JSON)',
+				name: 'templateData',
+				type: 'json',
+				default: '{}',
+				displayOptions: {
+					show: {
+						resource: ['screenshot'],
+						source: ['html', 'markdown'],
+					},
+				},
+				description:
+					'Optional. JSON object of values to fill {{placeholders}} in your HTML/Markdown before rendering.',
+			},
 
 			// ─── Screenshot: Format ────────────────────────────────────
 			{
@@ -792,6 +806,25 @@ function buildCaptureBody(this: IExecuteFunctions, itemIndex: number): IDataObje
 		body.markdown = this.getNodeParameter('markdown', itemIndex) as string;
 	} else {
 		body.html = this.getNodeParameter('html', itemIndex) as string;
+	}
+
+	if (source === 'html' || source === 'markdown') {
+		const templateDataRaw = this.getNodeParameter('templateData', itemIndex, '{}') as
+			| string
+			| IDataObject;
+		const templateData =
+			typeof templateDataRaw === 'string'
+				? safeJsonParse.call<IExecuteFunctions, [string, IDataObject, string, number], IDataObject>(
+						this,
+						templateDataRaw,
+						{} as IDataObject,
+						'Template Data (JSON)',
+						itemIndex,
+					)
+				: templateDataRaw;
+		if (templateData && typeof templateData === 'object' && Object.keys(templateData).length > 0) {
+			body.data = templateData;
+		}
 	}
 
 	const additional = this.getNodeParameter(
