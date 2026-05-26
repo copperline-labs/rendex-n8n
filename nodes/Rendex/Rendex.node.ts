@@ -120,9 +120,10 @@ export class Rendex implements INodeType {
 				options: [
 					{ name: 'URL', value: 'url' },
 					{ name: 'HTML', value: 'html' },
+					{ name: 'Markdown', value: 'markdown' },
 				],
 				default: 'url',
-				description: 'Whether to capture a live URL or render raw HTML',
+				description: 'Whether to capture a live URL, render raw HTML, or render Markdown',
 			},
 			{
 				displayName: 'URL',
@@ -155,6 +156,23 @@ export class Rendex implements INodeType {
 					},
 				},
 				description: 'Raw HTML to render (max 5 MB)',
+			},
+			{
+				displayName: 'Markdown',
+				name: 'markdown',
+				type: 'string',
+				typeOptions: {
+					rows: 6,
+				},
+				required: true,
+				default: '',
+				displayOptions: {
+					show: {
+						resource: ['screenshot'],
+						source: ['markdown'],
+					},
+				},
+				description: 'Markdown to render — converted to HTML server-side (max 5 MB)',
 			},
 
 			// ─── Screenshot: Format ────────────────────────────────────
@@ -764,12 +782,14 @@ const ADDITIONAL_OPTION_KEYS = [
 const JSON_OPTION_KEYS = ['headers', 'cookies', 'pdfMargin'] as const;
 
 function buildCaptureBody(this: IExecuteFunctions, itemIndex: number): IDataObject {
-	const source = this.getNodeParameter('source', itemIndex) as 'url' | 'html';
+	const source = this.getNodeParameter('source', itemIndex) as 'url' | 'html' | 'markdown';
 	const format = this.getNodeParameter('format', itemIndex) as string;
 	const body: IDataObject = { format };
 
 	if (source === 'url') {
 		body.url = this.getNodeParameter('url', itemIndex) as string;
+	} else if (source === 'markdown') {
+		body.markdown = this.getNodeParameter('markdown', itemIndex) as string;
 	} else {
 		body.html = this.getNodeParameter('html', itemIndex) as string;
 	}

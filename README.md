@@ -1,17 +1,17 @@
 # n8n-nodes-rendex
 
-> n8n community node for [Rendex](https://rendex.dev) — capture screenshots, generate PDFs, and render HTML to images via the Rendex rendering API.
+> n8n community node for [Rendex](https://rendex.dev) — capture screenshots, generate PDFs, and render HTML and Markdown to images via the Rendex rendering API.
 
 [![npm version](https://img.shields.io/npm/v/n8n-nodes-rendex)](https://www.npmjs.com/package/n8n-nodes-rendex)
 [![license](https://img.shields.io/npm/l/n8n-nodes-rendex)](LICENSE)
 
-This is a community node for [n8n](https://n8n.io), the fair-code workflow automation platform. It lets your workflows talk to [api.rendex.dev](https://api.rendex.dev) to render web pages and raw HTML into high-quality PNG, JPEG, WebP, or PDF output.
+This is a community node for [n8n](https://n8n.io), the fair-code workflow automation platform. It lets your workflows talk to [api.rendex.dev](https://api.rendex.dev) to render web pages, raw HTML, and Markdown into high-quality PNG, JPEG, WebP, or PDF output.
 
 ---
 
 ## Features
 
-- **Capture screenshots** of live URLs or raw HTML (up to 5 MB of HTML)
+- **Capture screenshots** of live URLs, raw HTML, or Markdown (up to 5 MB of HTML/Markdown)
 - **Generate PDFs** with configurable page size, margins, landscape, and scale
 - **Async mode** — submit a capture and receive an HMAC-signed webhook when it's done
 - **Batch mode** — submit up to 500 URLs in a single request (plan-dependent)
@@ -19,7 +19,7 @@ This is a community node for [n8n](https://n8n.io), the fair-code workflow autom
 - **Element capture** — screenshot a specific CSS selector instead of the full page
 - **Ad blocking**, resource blocking, CSS/JS injection, cookie injection, custom headers, dark mode emulation, full-page auto-scroll
 
-Rendex is built on Cloudflare Workers with Browser Rendering and backs a live production API. See [rendex.dev/docs](https://rendex.dev/docs) for full API documentation.
+Rendex is built on Cloudflare Workers with Browser Rendering and backs a live v1.0.0 production API. See [rendex.dev/docs](https://rendex.dev/docs) for full API documentation.
 
 ---
 
@@ -115,7 +115,7 @@ See [rendex.dev/pricing](https://rendex.dev/pricing) for current pricing.
 
 ## Advanced options
 
-The **Capture** and **Capture Async** operations expose an **Additional Options** collection with the full Rendex API parameter surface:
+The **Capture** and **Capture Async** operations expose an **Additional Options** collection with the full Rendex v1.0.0 parameter surface:
 
 - **Viewport**: Width, Height, Device Scale Factor, Full Page, Dark Mode
 - **Output**: Quality (for JPEG/WebP)
