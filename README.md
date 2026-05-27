@@ -19,7 +19,7 @@ This is a community node for [n8n](https://n8n.io), the fair-code workflow autom
 - **Element capture** — screenshot a specific CSS selector instead of the full page
 - **Ad blocking**, resource blocking, CSS/JS injection, cookie injection, custom headers, dark mode emulation, full-page auto-scroll
 
-Rendex is built on Cloudflare Workers with Browser Rendering and backs a live v1.0.0 production API. See [rendex.dev/docs](https://rendex.dev/docs) for full API documentation.
+Rendex is built on Cloudflare Workers with Browser Rendering and backs a live production API. See [rendex.dev/docs](https://rendex.dev/docs) for full API documentation.
 
 ---
 
@@ -115,7 +115,7 @@ See [rendex.dev/pricing](https://rendex.dev/pricing) for current pricing.
 
 ## Advanced options
 
-The **Capture** and **Capture Async** operations expose an **Additional Options** collection with the full Rendex v1.0.0 parameter surface:
+The **Capture** and **Capture Async** operations expose an **Additional Options** collection with the full Rendex parameter surface:
 
 - **Viewport**: Width, Height, Device Scale Factor, Full Page, Dark Mode
 - **Output**: Quality (for JPEG/WebP)
