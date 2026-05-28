@@ -17,7 +17,7 @@ export class Rendex implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Capture screenshots, generate PDFs, and render HTML via Rendex',
+		description: 'Capture screenshots, generate PDFs, render HTML, and extract content via Rendex',
 		defaults: {
 			name: 'Rendex',
 		},
@@ -39,6 +39,7 @@ export class Rendex implements INodeType {
 				noDataExpression: true,
 				options: [
 					{ name: 'Screenshot', value: 'screenshot' },
+					{ name: 'Document', value: 'document' },
 					{ name: 'Job', value: 'job' },
 					{ name: 'Batch', value: 'batch' },
 				],
@@ -67,6 +68,25 @@ export class Rendex implements INodeType {
 					},
 				],
 				default: 'capture',
+			},
+
+			// ─── Document Operations ───────────────────────────────────
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: { show: { resource: ['document'] } },
+				options: [
+					{
+						name: 'Extract',
+						value: 'extract',
+						description:
+							'Extract clean reader-mode content (Markdown/JSON/HTML) from a URL — ideal for LLM and RAG pipelines',
+						action: 'Extract content from a URL',
+					},
+				],
+				default: 'extract',
 			},
 
 			// ─── Job Operations ────────────────────────────────────────
@@ -265,6 +285,13 @@ export class Rendex implements INodeType {
 						description: 'Whether to block ads, trackers, and chat widgets during capture',
 					},
 					{
+						displayName: 'Block Cookie Banners',
+						name: 'blockCookieBanners',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to hide common cookie/consent banners before capture',
+					},
+					{
 						displayName: 'Block Resource Types',
 						name: 'blockResourceTypes',
 						type: 'multiOptions',
@@ -335,6 +362,21 @@ export class Rendex implements INodeType {
 						description: 'Extra delay after load before capture, in milliseconds (0–10000)',
 					},
 					{
+						displayName: 'Device',
+						name: 'device',
+						type: 'options',
+						options: [
+							{ name: 'Desktop', value: 'desktop' },
+							{ name: 'iPad', value: 'ipad' },
+							{ name: 'iPad Pro', value: 'ipad_pro' },
+							{ name: 'iPhone 15', value: 'iphone_15' },
+							{ name: 'iPhone SE', value: 'iphone_se' },
+							{ name: 'Pixel 8', value: 'pixel_8' },
+						],
+						default: 'desktop',
+						description: 'Device preset (sets viewport, scale, and user agent)',
+					},
+					{
 						displayName: 'Device Scale Factor',
 						name: 'deviceScaleFactor',
 						type: 'number',
@@ -390,6 +432,14 @@ export class Rendex implements INodeType {
 						description: 'Viewport height in pixels (240–2160)',
 					},
 					{
+						displayName: 'Hide Selectors',
+						name: 'hideSelectors',
+						type: 'string',
+						default: '',
+						placeholder: '.cookie-banner, #ad-slot',
+						description: 'Comma- or newline-separated CSS selectors to hide before capture',
+					},
+					{
 						displayName: 'PDF Landscape',
 						name: 'pdfLandscape',
 						type: 'boolean',
@@ -440,6 +490,22 @@ export class Rendex implements INodeType {
 						typeOptions: { minValue: 1, maxValue: 100 },
 						default: 80,
 						description: 'JPEG/WebP compression quality (1–100). Ignored for PNG and PDF.',
+					},
+					{
+						displayName: 'Resize Height',
+						name: 'resizeHeight',
+						type: 'number',
+						typeOptions: { minValue: 16, maxValue: 2160 },
+						default: 0,
+						description: 'Resize output height in px',
+					},
+					{
+						displayName: 'Resize Width',
+						name: 'resizeWidth',
+						type: 'number',
+						typeOptions: { minValue: 16, maxValue: 3840 },
+						default: 0,
+						description: 'Resize output width in px (keeps aspect ratio if height omitted)',
 					},
 					{
 						displayName: 'Timeout (Seconds)',
@@ -577,6 +643,114 @@ export class Rendex implements INodeType {
 				},
 				description: 'ID of the batch returned by Submit',
 			},
+
+			// ─── Document: Extract ─────────────────────────────────────
+			{
+				displayName: 'URL',
+				name: 'url',
+				type: 'string',
+				required: true,
+				default: '',
+				placeholder: 'https://example.com/article',
+				displayOptions: {
+					show: {
+						resource: ['document'],
+						operation: ['extract'],
+					},
+				},
+				description: 'The URL to extract clean reader-mode content from',
+			},
+			{
+				displayName: 'Extract Format',
+				name: 'extractFormat',
+				type: 'options',
+				options: [
+					{ name: 'Markdown', value: 'markdown' },
+					{ name: 'JSON', value: 'json' },
+					{ name: 'HTML', value: 'html' },
+				],
+				default: 'markdown',
+				displayOptions: {
+					show: {
+						resource: ['document'],
+						operation: ['extract'],
+					},
+				},
+				description: 'Output format of the extracted content',
+			},
+			{
+				displayName: 'Additional Fields',
+				name: 'additionalFields',
+				type: 'collection',
+				placeholder: 'Add Field',
+				default: {},
+				displayOptions: {
+					show: {
+						resource: ['document'],
+						operation: ['extract'],
+					},
+				},
+				options: [
+					{
+						displayName: 'Block Ads',
+						name: 'blockAds',
+						type: 'boolean',
+						default: true,
+						description: 'Whether to block ads, trackers, and chat widgets before extraction',
+					},
+					{
+						displayName: 'Block Cookie Banners',
+						name: 'blockCookieBanners',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to hide common cookie/consent banners before extraction',
+					},
+					{
+						displayName: 'Device',
+						name: 'device',
+						type: 'options',
+						options: [
+							{ name: 'Desktop', value: 'desktop' },
+							{ name: 'iPad', value: 'ipad' },
+							{ name: 'iPad Pro', value: 'ipad_pro' },
+							{ name: 'iPhone 15', value: 'iphone_15' },
+							{ name: 'iPhone SE', value: 'iphone_se' },
+							{ name: 'Pixel 8', value: 'pixel_8' },
+						],
+						default: 'desktop',
+						description: 'Device preset (sets viewport, scale, and user agent)',
+					},
+					{
+						displayName: 'Hide Selectors',
+						name: 'hideSelectors',
+						type: 'string',
+						default: '',
+						placeholder: '.cookie-banner, #ad-slot',
+						description: 'Comma- or newline-separated CSS selectors to hide before extraction',
+					},
+					{
+						displayName: 'Timeout (Seconds)',
+						name: 'timeout',
+						type: 'number',
+						typeOptions: { minValue: 5, maxValue: 60 },
+						default: 30,
+						description: 'Page load timeout in seconds (5–60)',
+					},
+					{
+						displayName: 'Wait Until',
+						name: 'waitUntil',
+						type: 'options',
+						options: [
+							{ name: 'DOM Content Loaded', value: 'domcontentloaded' },
+							{ name: 'Load', value: 'load' },
+							{ name: 'Network Idle 0', value: 'networkidle0' },
+							{ name: 'Network Idle 2', value: 'networkidle2' },
+						],
+						default: 'networkidle2',
+						description: 'Navigation wait condition before extraction',
+					},
+				],
+			},
 		],
 	};
 
@@ -666,6 +840,20 @@ export class Rendex implements INodeType {
 						json: response,
 						pairedItem: { item: i },
 					});
+				} else if (resource === 'document' && operation === 'extract') {
+					const body = buildExtractBody.call(this, i);
+					const response = (await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'rendexApi',
+						{
+							method: 'POST',
+							url: `${baseUrl}/v1/extract`,
+							body,
+							json: true,
+						} as IHttpRequestOptions,
+					)) as IDataObject;
+
+					returnData.push({ json: response, pairedItem: { item: i } });
 				} else if (resource === 'job' && operation === 'getStatus') {
 					const jobId = this.getNodeParameter('jobId', i) as string;
 					const response = (await this.helpers.httpRequestWithAuthentication.call(
@@ -770,6 +958,7 @@ const ADDITIONAL_OPTION_KEYS = [
 	'height',
 	'fullPage',
 	'deviceScaleFactor',
+	'device',
 	'darkMode',
 	'quality',
 	'selector',
@@ -779,7 +968,10 @@ const ADDITIONAL_OPTION_KEYS = [
 	'waitForSelector',
 	'bestAttempt',
 	'blockAds',
+	'blockCookieBanners',
 	'blockResourceTypes',
+	'resizeWidth',
+	'resizeHeight',
 	'css',
 	'js',
 	'userAgent',
@@ -837,7 +1029,20 @@ function buildCaptureBody(this: IExecuteFunctions, itemIndex: number): IDataObje
 		const value = additional[key];
 		if (value === undefined || value === null || value === '') continue;
 		if (Array.isArray(value) && value.length === 0) continue;
+		// Resize fields default to 0 in the UI to mean "unset"; never forward a 0.
+		if ((key === 'resizeWidth' || key === 'resizeHeight') && value === 0) continue;
 		body[key] = value;
+	}
+
+	// hideSelectors is entered as a comma/newline-separated string but the API
+	// expects an array of CSS selectors.
+	const hideSelectorsRaw = additional.hideSelectors;
+	if (typeof hideSelectorsRaw === 'string' && hideSelectorsRaw.trim()) {
+		const selectors = hideSelectorsRaw
+			.split(/[\n,]/)
+			.map((s) => s.trim())
+			.filter(Boolean);
+		if (selectors.length > 0) body.hideSelectors = selectors;
 	}
 
 	for (const key of JSON_OPTION_KEYS) {
@@ -849,6 +1054,42 @@ function buildCaptureBody(this: IExecuteFunctions, itemIndex: number): IDataObje
 		} else {
 			body[key] = raw;
 		}
+	}
+
+	return body;
+}
+
+const EXTRACT_OPTION_KEYS = [
+	'device',
+	'blockAds',
+	'blockCookieBanners',
+	'timeout',
+	'waitUntil',
+] as const;
+
+function buildExtractBody(this: IExecuteFunctions, itemIndex: number): IDataObject {
+	const body: IDataObject = {
+		url: this.getNodeParameter('url', itemIndex) as string,
+		extractFormat: this.getNodeParameter('extractFormat', itemIndex, 'markdown') as string,
+	};
+
+	const additional = this.getNodeParameter('additionalFields', itemIndex, {}) as IDataObject;
+
+	for (const key of EXTRACT_OPTION_KEYS) {
+		const value = additional[key];
+		if (value === undefined || value === null || value === '') continue;
+		body[key] = value;
+	}
+
+	// hideSelectors is entered as a comma/newline-separated string but the API
+	// expects an array of CSS selectors.
+	const hideSelectorsRaw = additional.hideSelectors;
+	if (typeof hideSelectorsRaw === 'string' && hideSelectorsRaw.trim()) {
+		const selectors = hideSelectorsRaw
+			.split(/[\n,]/)
+			.map((s) => s.trim())
+			.filter(Boolean);
+		if (selectors.length > 0) body.hideSelectors = selectors;
 	}
 
 	return body;

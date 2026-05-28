@@ -1,0 +1,159 @@
+{
+  "name": "Rendex Demo",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Rendex n8n Demo — Setup\n\n**1. On each of the 3 Rendex nodes**: click Credentials dropdown → pick **Rendex API**\n\n**2. On OpenAI Chat Model**: pick/create your OpenAI credential\n\n**3. Add Rendex as an AI tool** — see the sticky note near the AI Agent (bottom of canvas)\n\n**4. Recording order:**\n- Flow 1 (top):  'Test workflow' on Trigger - Sync\n- Flow 2 (middle): 'Test workflow' on Trigger - Async\n- Flow 3 (bottom): Click 'Chat' on the Chat Trigger and type: `Take a screenshot of https://google.com`",
+        "height": 280,
+        "width": 440
+      },
+      "id": "sticky-overview",
+      "name": "Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-280, 280]
+    },
+    {
+      "parameters": {},
+      "id": "trigger-sync",
+      "name": "Trigger - Sync",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "resource": "screenshot",
+        "operation": "capture",
+        "source": "url",
+        "url": "https://rendex.dev",
+        "format": "png",
+        "binaryPropertyName": "data",
+        "additionalOptions": {
+          "fullPage": true
+        }
+      },
+      "id": "rendex-sync-capture",
+      "name": "Rendex - Sync Capture",
+      "type": "n8n-nodes-rendex.rendex",
+      "typeVersion": 1,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {},
+      "id": "trigger-async",
+      "name": "Trigger - Async",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 540]
+    },
+    {
+      "parameters": {
+        "resource": "screenshot",
+        "operation": "captureAsync",
+        "source": "url",
+        "url": "https://example.com",
+        "format": "png",
+        "webhookUrl": "",
+        "additionalOptions": {}
+      },
+      "id": "rendex-async-capture",
+      "name": "Rendex - Async Capture",
+      "type": "n8n-nodes-rendex.rendex",
+      "typeVersion": 1,
+      "position": [440, 540]
+    },
+    {
+      "parameters": {
+        "resource": "job",
+        "operation": "getStatus",
+        "jobId": "={{ $json.data.jobId }}"
+      },
+      "id": "rendex-job-status",
+      "name": "Rendex - Job Status",
+      "type": "n8n-nodes-rendex.rendex",
+      "typeVersion": 1,
+      "position": [680, 540]
+    },
+    {
+      "parameters": {
+        "public": false,
+        "options": {}
+      },
+      "id": "chat-trigger",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 820]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a screenshot assistant. When the user mentions a website, URL, or domain, you MUST:\n\n1. Normalize it to a full URL (add https:// if the user omitted it — e.g., \"google.com\" → \"https://google.com\")\n2. Call the Rendex tool, passing the normalized URL as the `url` argument\n3. Wait for the tool's actual response before replying\n4. Summarize the real metadata from the tool response (format, bytesSize, contentType)\n\nNever claim a screenshot succeeded without seeing actual tool response data. If the tool returns an error, report the error honestly."
+        }
+      },
+      "id": "ai-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [460, 820]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "id": "lm-openai",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [380, 1020]
+    },
+    {
+      "parameters": {
+        "content": "### Add Rendex as an AI tool\n\nCommunity nodes can't auto-wire to the AI Agent's **ai_tool** socket on import — add via the UI:\n\n**1.** On the AI Agent, click **+** on its **Tool** socket (rightmost of 3 circles at the bottom)\n\n**2.** Search: **Rendex** → select → Rendex node appears, connected by dotted line\n\n**3.** Configure it:\n- Resource: **Screenshot**\n- Operation: **Capture**\n- Source: **URL**\n- Format: **png**\n- Credential: **Rendex API**\n\n**4. CRITICAL — register URL as an AI-controllable parameter:**\nHover over the **URL** field label. A ✨ **sparkle button** appears to the right. **Click it.** n8n auto-generates the `$fromAI()` expression AND registers the parameter with the agent's tool schema.\n\n⚠️ **Typing `$fromAI()` manually into Expression mode DOES NOT register the param with the schema.** The ✨ click is required.\n\n**5. Add a fallback** (optional but recommended). The ✨ button inserts something like `={{ $fromAI('URL', '', 'string') }}`. Replace with:\n```\n{{ ($fromAI('URL', 'The full URL to screenshot, including https://', 'string')) || 'https://rendex.dev' }}\n```\nThe `|| 'https://rendex.dev'` catches cases where the AI passes an empty string.\n\n**6. Save workflow.**\n\n**7. Test prompt in chat:** `Take a screenshot of https://google.com`",
+        "height": 560,
+        "width": 480
+      },
+      "id": "sticky-tool",
+      "name": "Add Rendex Tool Here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [680, 920]
+    }
+  ],
+  "connections": {
+    "Trigger - Sync": {
+      "main": [
+        [{ "node": "Rendex - Sync Capture", "type": "main", "index": 0 }]
+      ]
+    },
+    "Trigger - Async": {
+      "main": [
+        [{ "node": "Rendex - Async Capture", "type": "main", "index": 0 }]
+      ]
+    },
+    "Rendex - Async Capture": {
+      "main": [
+        [{ "node": "Rendex - Job Status", "type": "main", "index": 0 }]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [{ "node": "AI Agent", "type": "main", "index": 0 }]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": ""
+  }
+}

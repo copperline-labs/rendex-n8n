@@ -12,6 +12,7 @@ This is a community node for [n8n](https://n8n.io), the fair-code workflow autom
 ## Features
 
 - **Capture screenshots** of live URLs, raw HTML, or Markdown (up to 5 MB of HTML/Markdown)
+- **Data templating** — fill `{{placeholders}}` in an HTML or Markdown template from a JSON object (Mustache) to generate invoices, reports, and certificates from one template
 - **Generate PDFs** with configurable page size, margins, landscape, and scale
 - **Async mode** — submit a capture and receive an HMAC-signed webhook when it's done
 - **Batch mode** — submit up to 500 URLs in a single request (plan-dependent)
@@ -82,6 +83,16 @@ Rendex keys are bearer tokens sent as `Authorization: Bearer rdx_...`. The node 
 3. Set **Source** = `URL` and enter `https://example.com`
 4. Leave **Format** = `png`
 5. Click **Execute Node** — the output tab shows the metadata JSON and the binary `data` property holds the PNG. Wire it into **Write Binary File**, **Upload to S3**, **HTTP Request** (to forward it), or any other binary-capable node.
+
+## Example: data templating (invoice from a template)
+
+1. Add a **Rendex** node, set **Operation** = `Capture`
+2. Set **Source** = `HTML` (or `Markdown`) and enter a template with Mustache placeholders, e.g. `<h1>Invoice {{number}}</h1><p>Total: {{total}}</p>`
+3. Set **Format** = `pdf`
+4. Fill the **Template Data (JSON)** field with the values to inject, e.g. `{"number":"INV-014","total":"$2,400"}`
+5. Execute — Rendex renders the template with your data and returns the PDF in the binary `data` property. Map an upstream node's JSON onto **Template Data (JSON)** to render one document per item.
+
+`Template Data (JSON)` is logic-less Mustache: `{{var}}` interpolation, `{{#items}}…{{/items}}` loops, and nested `{{a.b}}` access. It only applies to **HTML** and **Markdown** sources.
 
 ## Example: async + webhook trigger
 
