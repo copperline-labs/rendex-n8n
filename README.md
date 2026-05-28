@@ -1,6 +1,6 @@
 # n8n-nodes-rendex
 
-> n8n community node for [Rendex](https://rendex.dev) — capture screenshots, generate PDFs, and render HTML and Markdown to images via the Rendex rendering API.
+> n8n community node for [Rendex](https://rendex.dev) — capture screenshots, generate PDFs, render HTML and Markdown to images, and extract clean content from URLs via the Rendex rendering API.
 
 [![npm version](https://img.shields.io/npm/v/n8n-nodes-rendex)](https://www.npmjs.com/package/n8n-nodes-rendex)
 [![license](https://img.shields.io/npm/l/n8n-nodes-rendex)](LICENSE)
@@ -12,8 +12,12 @@ This is a community node for [n8n](https://n8n.io), the fair-code workflow autom
 ## Features
 
 - **Capture screenshots** of live URLs, raw HTML, or Markdown (up to 5 MB of HTML/Markdown)
+- **Extract content** — turn any URL into clean reader-mode **Markdown, JSON, or HTML** for LLM and RAG pipelines (Document → Extract)
 - **Data templating** — fill `{{placeholders}}` in an HTML or Markdown template from a JSON object (Mustache) to generate invoices, reports, and certificates from one template
 - **Generate PDFs** with configurable page size, margins, landscape, and scale
+- **Device presets** — render at iPhone, iPad, or Pixel viewports (sets viewport, scale, and user agent in one option)
+- **Output resize** — downscale captures to thumbnails, aspect ratio preserved
+- **Clean capture** — hide cookie/consent banners and arbitrary CSS selectors before capture
 - **Async mode** — submit a capture and receive an HMAC-signed webhook when it's done
 - **Batch mode** — submit up to 500 URLs in a single request (plan-dependent)
 - **Geo-targeted captures** — render pages as seen from a specific country, city, or state *(Pro/Enterprise)*
@@ -61,6 +65,12 @@ Rendex keys are bearer tokens sent as `Authorization: Bearer rdx_...`. The node 
 | **Capture** | Sync request that returns an image or PDF. Output is written to the node's binary property (default `data`) plus a JSON metadata object. |
 | **Capture Async** | Submits a job and returns immediately with a `jobId`. Optional `webhookUrl` is called with an HMAC-signed payload when the capture completes. |
 
+### Document
+
+| Operation | What it does |
+|---|---|
+| **Extract** | Fetches a URL, runs reader-mode extraction in the fully rendered page (handles JS/SPA pages), and returns clean **Markdown**, **JSON**, or **HTML** — title, byline, excerpt, site name, and content. Ideal for feeding pages to LLM/RAG nodes. |
+
 ### Job
 
 | Operation | What it does |
@@ -93,6 +103,13 @@ Rendex keys are bearer tokens sent as `Authorization: Bearer rdx_...`. The node 
 5. Execute — Rendex renders the template with your data and returns the PDF in the binary `data` property. Map an upstream node's JSON onto **Template Data (JSON)** to render one document per item.
 
 `Template Data (JSON)` is logic-less Mustache: `{{var}}` interpolation, `{{#items}}…{{/items}}` loops, and nested `{{a.b}}` access. It only applies to **HTML** and **Markdown** sources.
+
+## Example: extract a page to Markdown for an LLM
+
+1. Add a **Rendex** node, set **Resource** = `Document`, **Operation** = `Extract`
+2. Enter the article **URL** (e.g. `https://example.com/blog/post`)
+3. Leave **Extract Format** = `Markdown` (or pick `JSON`/`HTML`)
+4. Execute — the output JSON has `content` (clean Markdown), plus `title`, `byline`, `excerpt`, `siteName`, and `length`. Map `content` straight into an **AI Agent**, **OpenAI**, or vector-store node — no HTML stripping needed.
 
 ## Example: async + webhook trigger
 
@@ -129,10 +146,11 @@ See [rendex.dev/pricing](https://rendex.dev/pricing) for current pricing.
 The **Capture** and **Capture Async** operations expose an **Additional Options** collection with the full Rendex parameter surface:
 
 - **Viewport**: Width, Height, Device Scale Factor, Full Page, Dark Mode
+- **Device & sizing**: Device preset (iPhone/iPad/Pixel), Resize Width, Resize Height
 - **Output**: Quality (for JPEG/WebP)
 - **Wait strategy**: Wait Until, Timeout, Delay, Wait For Selector, Best Attempt
 - **Element capture**: Element Selector
-- **Blocking**: Block Ads, Block Resource Types
+- **Blocking**: Block Ads, Block Resource Types, Block Cookie Banners, Hide Selectors
 - **Injection**: Custom CSS, Custom JavaScript, Custom Headers (JSON), Cookies (JSON), User Agent
 - **PDF**: PDF Page Format, PDF Landscape, PDF Print Background, PDF Scale, PDF Margins (JSON)
 - **Geo-targeting**: Geo Country, Geo City, Geo State *(Pro/Enterprise)*

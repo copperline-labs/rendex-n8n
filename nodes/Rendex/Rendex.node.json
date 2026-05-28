@@ -2,7 +2,7 @@
 	"node": "n8n-nodes-base.rendex",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
-	"categories": ["Development", "Marketing", "Productivity"],
+	"categories": ["Development", "Marketing", "Productivity", "AI"],
 	"resources": {
 		"credentialDocumentation": [
 			{
@@ -15,5 +15,5 @@
 			}
 		]
 	},
-	"alias": ["screenshot", "pdf", "html", "render", "capture", "rendex"]
+	"alias": ["screenshot", "pdf", "html", "render", "capture", "rendex", "markdown", "extract"]
 }
