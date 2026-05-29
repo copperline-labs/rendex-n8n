@@ -1,8 +1,8 @@
 {
-	"node": "n8n-nodes-base.rendex",
+	"node": "n8n-nodes-rendex.rendex",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
-	"categories": ["Development", "Marketing", "Productivity", "AI"],
+	"categories": ["Development", "Marketing & Content", "Productivity"],
 	"resources": {
 		"credentialDocumentation": [
 			{
