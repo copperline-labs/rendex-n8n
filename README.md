@@ -22,6 +22,7 @@ This is a community node for [n8n](https://n8n.io), the fair-code workflow autom
 - **Batch mode** — submit up to 500 URLs in a single request (plan-dependent)
 - **Geo-targeted captures** — render pages as seen from a specific country, city, or state *(Pro/Enterprise)*
 - **Element capture** — screenshot a specific CSS selector instead of the full page
+- **Watch a page for changes** *(Rendex Watch)* — monitor a URL on a schedule with real-Chrome **visual diff**, text diff, or both; create/list/update/run watches and **trigger a workflow when a page changes** (polling **Rendex Watch Trigger** node)
 - **Ad blocking**, resource blocking, CSS/JS injection, cookie injection, custom headers, dark mode emulation, full-page auto-scroll
 
 Rendex is built on Cloudflare Workers with Browser Rendering and backs a live production API. See [rendex.dev/docs](https://rendex.dev/docs) for full API documentation.
@@ -83,6 +84,25 @@ Rendex keys are bearer tokens sent as `Authorization: Bearer rdx_...`. The node 
 |---|---|
 | **Submit** | Submits up to 500 URLs for parallel capture. Accepts per-URL defaults and an optional completion webhook. |
 | **Get Status** | Polls a batch by `batchId` and returns status + all child job results. |
+
+### Watch (Rendex Watch)
+
+Monitor a URL on a schedule and detect when it changes — real-Chrome **visual** diff (with a highlighted overlay), an extracted-**text** diff, or **both**. Uses your existing `rdx_` key and shared credit pool.
+
+| Operation | What it does |
+|---|---|
+| **Create** | Start monitoring a URL. Choose the interval, change-detection mode, and (optionally) a webhook/email alert + render knobs (element selector, noise filters, monitor identity). |
+| **Get** | Fetch one watch by ID. |
+| **Get Many** | List your watches (filter by active/paused) — one output item per watch. |
+| **Run Now** | Trigger an immediate check (charges 1 credit). |
+| **Update** | Change the URL, interval, mode, alerts, or pause/resume. |
+| **Delete** | Remove a watch and its run history. |
+
+> **Plan walls:** the minimum check interval is your plan's floor (Free daily / Starter 3h / Pro 30 min / Enterprise 5 min). Webhook alerts need Starter+; email alerts and the visual/text diff work on every plan.
+
+### Rendex Watch Trigger
+
+A separate **trigger** node that starts your workflow when a monitored page changes. It **polls** your watches and fires for any whose last change advanced since the previous poll (leave **Watch ID** empty to fire for any of your watches, or set it to monitor one). For real-time delivery, point a watch's **Webhook URL** at an n8n **Webhook** node instead — this trigger is the zero-config alternative.
 
 ---
 

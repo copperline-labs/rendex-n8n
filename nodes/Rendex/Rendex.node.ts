@@ -3,11 +3,177 @@ import type {
 	IExecuteFunctions,
 	IHttpRequestOptions,
 	INodeExecutionData,
+	INodeProperties,
 	INodeType,
 	INodeTypeDescription,
 	JsonObject,
 } from 'n8n-workflow';
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
+
+// Shared optional fields for the Watch Create + Update collections. The render
+// knobs (format/fullPage/device/…/uaMode) are nested under `renderParams` by
+// buildWatchBody; the rest (name/threshold/webhookUrl/notifyEmail/paused) are
+// top-level on the request. Declared before the class so the description field
+// initializer can reference it.
+const WATCH_OPTION_FIELDS: INodeProperties[] = [
+	{
+		displayName: 'Name',
+		name: 'name',
+		type: 'string',
+		default: '',
+		description: 'Optional label for the watch',
+	},
+	{
+		displayName: 'Pause',
+		name: 'paused',
+		type: 'boolean',
+		default: false,
+		description: 'Whether to create/leave the watch paused (no checks until resumed)',
+	},
+	{
+		displayName: 'Change Threshold',
+		name: 'threshold',
+		type: 'number',
+		typeOptions: { minValue: 0, maxValue: 1, numberPrecision: 4 },
+		default: 0.01,
+		description: 'Visual-change noise floor as a 0–1 fraction; the diff must exceed it to count as changed',
+	},
+	{
+		displayName: 'Webhook URL',
+		name: 'webhookUrl',
+		type: 'string',
+		default: '',
+		placeholder: 'https://hooks.example.com/rendex',
+		description: 'Where to POST a signed change alert (Starter plan and above). Leave empty for email only. On Update, enter "-" or "none" to clear a previously-set URL.',
+	},
+	{
+		displayName: 'Notify Email',
+		name: 'notifyEmail',
+		type: 'string',
+		default: '',
+		description: 'Email to alert on a change (any plan). Must be your own account email; defaults to it if empty. On Update, enter "-" or "none" to clear a previously-set address.',
+	},
+	{
+		displayName: 'Capture Format',
+		name: 'format',
+		type: 'options',
+		options: [
+			{ name: 'PNG', value: 'png' },
+			{ name: 'JPEG', value: 'jpeg' },
+			{ name: 'WebP', value: 'webp' },
+			{ name: 'PDF', value: 'pdf' },
+		],
+		default: 'png',
+		description: 'A PDF can only be paired with text change-detection (it cannot be visually diffed)',
+	},
+	{
+		displayName: 'Full Page',
+		name: 'fullPage',
+		type: 'boolean',
+		default: true,
+		description: 'Whether to monitor the whole scrollable page (default) or just the viewport',
+	},
+	{
+		displayName: 'Device',
+		name: 'device',
+		type: 'options',
+		options: [
+			{ name: 'Desktop', value: 'desktop' },
+			{ name: 'iPad', value: 'ipad' },
+			{ name: 'iPad Pro', value: 'ipad_pro' },
+			{ name: 'iPhone 15', value: 'iphone_15' },
+			{ name: 'iPhone SE', value: 'iphone_se' },
+			{ name: 'Pixel 8', value: 'pixel_8' },
+		],
+		default: 'desktop',
+		description: 'Device preset to emulate',
+	},
+	{
+		displayName: 'Dark Mode',
+		name: 'darkMode',
+		type: 'boolean',
+		default: false,
+		description: 'Whether to emulate prefers-color-scheme: dark',
+	},
+	{
+		displayName: 'Block Ads',
+		name: 'blockAds',
+		type: 'boolean',
+		default: true,
+		description: 'Whether to block ads and trackers before capture',
+	},
+	{
+		displayName: 'Hide Cookie Banners',
+		name: 'blockCookieBanners',
+		type: 'boolean',
+		default: false,
+		description: 'Whether to hide common cookie/consent banners before capture',
+	},
+	{
+		displayName: 'Element Selector',
+		name: 'selector',
+		type: 'string',
+		default: '',
+		placeholder: '#price',
+		description: 'Capture and diff ONLY this CSS element instead of the whole page',
+	},
+	{
+		displayName: 'Hide Selectors',
+		name: 'hideSelectors',
+		type: 'string',
+		default: '',
+		placeholder: '.ad-slot, #live-chat',
+		description: 'Comma- or newline-separated CSS selectors to remove before capture',
+	},
+	{
+		displayName: 'Geo Country',
+		name: 'geo',
+		type: 'string',
+		default: '',
+		placeholder: 'US',
+		description: 'ISO country code to render from (Pro and above). Visual-only — cannot be combined with a text or both diff mode (a geo render returns no extracted text).',
+	},
+	{
+		displayName: 'Ignore Text',
+		name: 'ignoreText',
+		type: 'string',
+		typeOptions: { rows: 2 },
+		default: '',
+		placeholder: 'Updated at\n/\\d{2}:\\d{2}/',
+		description:
+			'Newline-separated substrings or /regex/flags stripped from the text before diffing (silence timestamps, view counts). Text detection only.',
+	},
+	{
+		displayName: 'Minimum Text Change (Characters)',
+		name: 'minTextChars',
+		type: 'number',
+		typeOptions: { minValue: 0 },
+		default: 0,
+		description: 'Ignore text changes smaller than this many added + removed characters',
+	},
+	{
+		displayName: 'Suppress While Present',
+		name: 'suppressWhilePresent',
+		type: 'string',
+		typeOptions: { rows: 2 },
+		default: '',
+		placeholder: 'Out of stock\nLoading',
+		description:
+			'Newline-separated markers — while the page text contains any of these, the run counts as unchanged (no alert, no baseline drift)',
+	},
+	{
+		displayName: 'Monitor Identity',
+		name: 'uaMode',
+		type: 'options',
+		options: [
+			{ name: 'Auto (Identify, Fall Back if Blocked)', value: 'auto' },
+			{ name: 'Always Identify as RendexWatch', value: 'identify' },
+			{ name: 'Standard Browser (Stealth)', value: 'stealth' },
+		],
+		default: 'auto',
+		description: 'How the monitor presents its User-Agent. See https://rendex.dev/bot.',
+	},
+];
 
 export class Rendex implements INodeType {
 	description: INodeTypeDescription = {
@@ -38,12 +204,61 @@ export class Rendex implements INodeType {
 				type: 'options',
 				noDataExpression: true,
 				options: [
-					{ name: 'Screenshot', value: 'screenshot' },
+					{ name: 'Batch', value: 'batch' },
 					{ name: 'Document', value: 'document' },
 					{ name: 'Job', value: 'job' },
-					{ name: 'Batch', value: 'batch' },
+					{ name: 'Screenshot', value: 'screenshot' },
+					{ name: 'Watch', value: 'watch' },
 				],
 				default: 'screenshot',
+			},
+
+			// ─── Watch Operations ──────────────────────────────────────
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: { show: { resource: ['watch'] } },
+				options: [
+					{
+						name: 'Create',
+						value: 'create',
+						description: 'Start monitoring a URL for changes on a schedule',
+						action: 'Create a watch',
+					},
+					{
+						name: 'Delete',
+						value: 'delete',
+						description: 'Delete a watch and its run history',
+						action: 'Delete a watch',
+					},
+					{
+						name: 'Get',
+						value: 'get',
+						description: 'Fetch one watch by ID',
+						action: 'Get a watch',
+					},
+					{
+						name: 'Get Many',
+						value: 'list',
+						description: 'List your watches',
+						action: 'Get many watches',
+					},
+					{
+						name: 'Run Now',
+						value: 'run',
+						description: 'Run an immediate check now (charges 1 credit)',
+						action: 'Run a watch now',
+					},
+					{
+						name: 'Update',
+						value: 'update',
+						description: 'Update, pause, resume, or re-point a watch',
+						action: 'Update a watch',
+					},
+				],
+				default: 'create',
 			},
 
 			// ─── Screenshot Operations ─────────────────────────────────
@@ -751,6 +966,134 @@ export class Rendex implements INodeType {
 					},
 				],
 			},
+
+			// ─── Watch: ID (get / update / delete / run) ───────────────
+			{
+				displayName: 'Watch ID',
+				name: 'watchId',
+				type: 'string',
+				required: true,
+				default: '',
+				placeholder: '11111111-2222-3333-4444-555555555555',
+				displayOptions: { show: { resource: ['watch'], operation: ['get', 'update', 'delete', 'run'] } },
+				description: 'The ID of the watch (from a Create or Get Many result)',
+			},
+
+			// ─── Watch: Create ─────────────────────────────────────────
+			{
+				displayName: 'URL',
+				name: 'url',
+				type: 'string',
+				required: true,
+				default: '',
+				placeholder: 'https://example.com/pricing',
+				displayOptions: { show: { resource: ['watch'], operation: ['create'] } },
+				description: 'The page to monitor for changes',
+			},
+			{
+				displayName: 'Check Every (Minutes)',
+				name: 'intervalMinutes',
+				type: 'number',
+				typeOptions: { minValue: 5, maxValue: 43200 },
+				default: 1440,
+				displayOptions: { show: { resource: ['watch'], operation: ['create'] } },
+				description:
+					"How often to check, in minutes. The minimum is your plan's floor — Free 1440 (daily), Starter 180, Pro 30, Enterprise 5. A faster value is rejected with WATCH_INTERVAL_TOO_FAST.",
+			},
+			{
+				displayName: 'Change Detection',
+				name: 'diffMode',
+				type: 'options',
+				options: [
+					{ name: 'Visual (Pixel Diff + Overlay)', value: 'visual' },
+					{ name: 'Text (Extracted-Text Diff)', value: 'text' },
+					{ name: 'Both', value: 'both' },
+				],
+				default: 'visual',
+				displayOptions: { show: { resource: ['watch'], operation: ['create'] } },
+				description: 'How changes are detected. Visual cannot monitor a PDF; text cannot be combined with geo.',
+			},
+			{
+				displayName: 'Additional Options',
+				name: 'watchOptions',
+				type: 'collection',
+				placeholder: 'Add Option',
+				default: {},
+				displayOptions: { show: { resource: ['watch'], operation: ['create'] } },
+				options: WATCH_OPTION_FIELDS,
+			},
+
+			// ─── Watch: Get Many ───────────────────────────────────────
+			{
+				displayName: 'Status',
+				name: 'status',
+				type: 'options',
+				options: [
+					{ name: 'All', value: 'all' },
+					{ name: 'Active', value: 'active' },
+					{ name: 'Paused', value: 'paused' },
+				],
+				default: 'all',
+				displayOptions: { show: { resource: ['watch'], operation: ['list'] } },
+				description: 'Filter watches by status',
+			},
+			{
+				displayName: 'Return All',
+				name: 'returnAll',
+				type: 'boolean',
+				default: false,
+				displayOptions: { show: { resource: ['watch'], operation: ['list'] } },
+				description: 'Whether to return all results or only up to a given limit',
+			},
+			{
+				displayName: 'Limit',
+				name: 'limit',
+				type: 'number',
+				typeOptions: { minValue: 1 },
+				default: 50,
+				displayOptions: { show: { resource: ['watch'], operation: ['list'], returnAll: [false] } },
+				description: 'Max number of results to return',
+			},
+
+			// ─── Watch: Update ─────────────────────────────────────────
+			{
+				displayName: 'Update Fields',
+				name: 'updateFields',
+				type: 'collection',
+				placeholder: 'Add Field',
+				default: {},
+				displayOptions: { show: { resource: ['watch'], operation: ['update'] } },
+				options: [
+					{
+						displayName: 'New URL',
+						name: 'url',
+						type: 'string',
+						default: '',
+						description: 'Re-point the watch at a new URL (clears the baseline; the next check re-baselines)',
+					},
+					{
+						displayName: 'Check Every (Minutes)',
+						name: 'intervalMinutes',
+						type: 'number',
+						typeOptions: { minValue: 5, maxValue: 43200 },
+						default: 1440,
+						description: "How often to check, in minutes (your plan's floor is the minimum)",
+					},
+					{
+						displayName: 'Change Detection',
+						name: 'diffMode',
+						type: 'options',
+						options: [
+							{ name: 'Visual (Pixel Diff + Overlay)', value: 'visual' },
+							{ name: 'Text (Extracted-Text Diff)', value: 'text' },
+							{ name: 'Both', value: 'both' },
+						],
+						default: 'visual',
+						description: 'How changes are detected',
+					},
+					...WATCH_OPTION_FIELDS,
+				],
+			},
 		],
 	};
 
@@ -925,6 +1268,96 @@ export class Rendex implements INodeType {
 					)) as IDataObject;
 
 					returnData.push({ json: response, pairedItem: { item: i } });
+				} else if (resource === 'watch' && operation === 'create') {
+					const watchOptions = this.getNodeParameter('watchOptions', i, {}) as IDataObject;
+					const body = buildWatchBody({
+						url: this.getNodeParameter('url', i) as string,
+						intervalMinutes: this.getNodeParameter('intervalMinutes', i, 1440) as number,
+						diffMode: this.getNodeParameter('diffMode', i, 'visual') as string,
+						...watchOptions,
+					});
+					const response = (await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'rendexApi',
+						{ method: 'POST', url: `${baseUrl}/v1/watches`, body, json: true } as IHttpRequestOptions,
+					)) as { data?: IDataObject };
+					returnData.push({ json: (response.data ?? response) as IDataObject, pairedItem: { item: i } });
+				} else if (resource === 'watch' && operation === 'get') {
+					const watchId = this.getNodeParameter('watchId', i) as string;
+					const response = (await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'rendexApi',
+						{ method: 'GET', url: `${baseUrl}/v1/watches/${encodeURIComponent(watchId)}`, json: true } as IHttpRequestOptions,
+					)) as { data?: IDataObject };
+					returnData.push({ json: (response.data ?? response) as IDataObject, pairedItem: { item: i } });
+				} else if (resource === 'watch' && operation === 'list') {
+					const status = this.getNodeParameter('status', i, 'all') as string;
+					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
+					// The API caps page size at 100. returnAll follows nextCursor to the end
+					// (an account can hold up to 1000 watches); otherwise return one clamped page.
+					const watchItems: IDataObject[] = [];
+					if (returnAll) {
+						let cursor: string | undefined;
+						for (let page = 0; page < 40; page++) {
+							const qs: IDataObject = { status, limit: 100 };
+							if (cursor) qs.cursor = cursor;
+							const res = (await this.helpers.httpRequestWithAuthentication.call(
+								this,
+								'rendexApi',
+								{ method: 'GET', url: `${baseUrl}/v1/watches`, qs, json: true } as IHttpRequestOptions,
+							)) as { data?: { items?: IDataObject[]; nextCursor?: string | null } };
+							watchItems.push(...(res.data?.items ?? []));
+							cursor = res.data?.nextCursor ?? undefined;
+							if (!cursor) break;
+						}
+					} else {
+						const limit = Math.min(this.getNodeParameter('limit', i, 50) as number, 100);
+						const res = (await this.helpers.httpRequestWithAuthentication.call(
+							this,
+							'rendexApi',
+							{ method: 'GET', url: `${baseUrl}/v1/watches`, qs: { status, limit }, json: true } as IHttpRequestOptions,
+						)) as { data?: { items?: IDataObject[] } };
+						watchItems.push(...(res.data?.items ?? []));
+					}
+					if (watchItems.length === 0) {
+						returnData.push({ json: { items: [] }, pairedItem: { item: i } });
+					}
+					for (const w of watchItems) {
+						returnData.push({ json: w, pairedItem: { item: i } });
+					}
+				} else if (resource === 'watch' && operation === 'run') {
+					const watchId = this.getNodeParameter('watchId', i) as string;
+					const response = (await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'rendexApi',
+						{ method: 'POST', url: `${baseUrl}/v1/watches/${encodeURIComponent(watchId)}/run`, body: {}, json: true } as IHttpRequestOptions,
+					)) as { data?: IDataObject };
+					returnData.push({ json: (response.data ?? response) as IDataObject, pairedItem: { item: i } });
+				} else if (resource === 'watch' && operation === 'update') {
+					const watchId = this.getNodeParameter('watchId', i) as string;
+					const updateFields = this.getNodeParameter('updateFields', i, {}) as IDataObject;
+					const body = buildWatchBody(updateFields, true);
+					if (Object.keys(body).length === 0) {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Provide at least one field to update.',
+							{ itemIndex: i },
+						);
+					}
+					const response = (await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'rendexApi',
+						{ method: 'PATCH', url: `${baseUrl}/v1/watches/${encodeURIComponent(watchId)}`, body, json: true } as IHttpRequestOptions,
+					)) as { data?: IDataObject };
+					returnData.push({ json: (response.data ?? response) as IDataObject, pairedItem: { item: i } });
+				} else if (resource === 'watch' && operation === 'delete') {
+					const watchId = this.getNodeParameter('watchId', i) as string;
+					await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'rendexApi',
+						{ method: 'DELETE', url: `${baseUrl}/v1/watches/${encodeURIComponent(watchId)}`, json: true } as IHttpRequestOptions,
+					);
+					returnData.push({ json: { deleted: true, id: watchId }, pairedItem: { item: i } });
 				} else {
 					throw new NodeOperationError(
 						this.getNode(),
@@ -1092,6 +1525,95 @@ function buildExtractBody(this: IExecuteFunctions, itemIndex: number): IDataObje
 		if (selectors.length > 0) body.hideSelectors = selectors;
 	}
 
+	return body;
+}
+
+// Watch request keys that stay top-level on the body…
+const WATCH_TOP_KEYS = [
+	'url',
+	'name',
+	'intervalMinutes',
+	'diffMode',
+	'threshold',
+	'webhookUrl',
+	'notifyEmail',
+	'paused',
+] as const;
+
+// …and render knobs that nest under `renderParams` (fed to the renderer each check).
+const WATCH_RENDER_SCALAR_KEYS = [
+	'format',
+	'fullPage',
+	'device',
+	'darkMode',
+	'blockAds',
+	'blockCookieBanners',
+	'selector',
+	'geo',
+	'minTextChars',
+	'uaMode',
+] as const;
+
+// String-list render knobs split into arrays before sending (also under renderParams).
+const WATCH_RENDER_LIST_KEYS = ['hideSelectors', 'ignoreText', 'suppressWhilePresent'] as const;
+
+// Alert-channel fields a PATCH can CLEAR (the API marks them .nullable() on the
+// UPDATE schema only). An empty string is indistinguishable from "leave unchanged"
+// in n8n's no-code collection, so a sentinel ("-" or "none") means "unset": on
+// update we emit JSON null (the route's null branch nulls the column); on create
+// there is nothing to clear, so the sentinel is simply dropped. These are NOT new
+// API param keys — webhookUrl/notifyEmail already live in WATCH_TOP_KEYS.
+const WATCH_CLEARABLE_KEYS = new Set<string>(['webhookUrl', 'notifyEmail']);
+const WATCH_CLEAR_SENTINELS = new Set<string>(['-', 'none']);
+
+/**
+ * Assemble a /v1/watches request body from a flat options object (the merged
+ * Create inputs or the Update collection). Top-level keys pass through; render
+ * knobs nest under `renderParams`. Empty strings/undefined are dropped, but a
+ * boolean `false` (e.g. paused/fullPage) is preserved. List-style knobs are
+ * split into arrays — hideSelectors on comma/newline; ignoreText and
+ * suppressWhilePresent on NEWLINE only (a literal/regex may contain commas).
+ * When `allowClear` is set (Update only), a clear-sentinel on webhookUrl/
+ * notifyEmail emits JSON null so the no-code user can unset an alert channel.
+ */
+function buildWatchBody(opts: IDataObject, allowClear = false): IDataObject {
+	const body: IDataObject = {};
+	for (const key of WATCH_TOP_KEYS) {
+		const v = opts[key];
+		// Clear-channel sentinel on the nullable alert fields: null on update
+		// (clears the column), dropped on create (nothing to clear yet).
+		if (
+			WATCH_CLEARABLE_KEYS.has(key) &&
+			typeof v === 'string' &&
+			WATCH_CLEAR_SENTINELS.has(v.trim().toLowerCase())
+		) {
+			if (allowClear) body[key] = null;
+			continue;
+		}
+		if (v === undefined || v === null || v === '') continue;
+		body[key] = v;
+	}
+
+	const renderParams: IDataObject = {};
+	for (const key of WATCH_RENDER_SCALAR_KEYS) {
+		const v = opts[key];
+		if (v === undefined || v === null || v === '') continue;
+		renderParams[key] = v;
+	}
+
+	for (const key of WATCH_RENDER_LIST_KEYS) {
+		const raw = opts[key];
+		if (typeof raw !== 'string' || !raw.trim()) continue;
+		// hideSelectors accepts comma OR newline; the text filters split on newline
+		// only (a literal/regex pattern may legitimately contain a comma).
+		const arr = raw
+			.split(key === 'hideSelectors' ? /[\n,]/ : '\n')
+			.map((s) => s.trim())
+			.filter(Boolean);
+		if (arr.length > 0) renderParams[key] = arr;
+	}
+
+	if (Object.keys(renderParams).length > 0) body.renderParams = renderParams;
 	return body;
 }
 

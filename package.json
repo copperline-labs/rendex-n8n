@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-rendex",
-  "version": "1.4.2",
-  "description": "n8n community node for Rendex — capture screenshots, generate PDFs, render HTML/Markdown, and extract clean Markdown/JSON/HTML content from URLs via Rendex's rendering API",
+  "version": "1.5.0",
+  "description": "n8n community node for Rendex — capture screenshots, generate PDFs, render HTML/Markdown, extract clean content, and monitor pages for changes (Rendex Watch) via Rendex's rendering API",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
@@ -10,7 +10,9 @@
     "pdf",
     "html-to-image",
     "rendering",
-    "web-capture"
+    "web-capture",
+    "website-monitoring",
+    "change-detection"
   ],
   "license": "MIT",
   "homepage": "https://rendex.dev",
@@ -48,7 +50,8 @@
       "dist/credentials/RendexApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/Rendex/Rendex.node.js"
+      "dist/nodes/Rendex/Rendex.node.js",
+      "dist/nodes/Rendex/RendexWatchTrigger.node.js"
     ]
   },
   "devDependencies": {
