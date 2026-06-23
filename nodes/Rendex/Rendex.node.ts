@@ -281,6 +281,12 @@ export class Rendex implements INodeType {
 						description: 'Submit a capture job and return immediately with a job ID',
 						action: 'Submit an async capture job',
 					},
+					{
+						name: 'Render Link',
+						value: 'renderLink',
+						description: 'Render HTML/URL to a signed, hosted image/PDF URL (for og:image)',
+						action: 'Render a hosted image or PDF link',
+					},
 				],
 				default: 'capture',
 			},
@@ -471,6 +477,23 @@ export class Rendex implements INodeType {
 				description: 'Optional URL to receive an HMAC-signed webhook when the capture completes',
 			},
 
+			// ─── Render Link: Link Expiry ──────────────────────────────
+			{
+				displayName: 'Link Expiry (Seconds)',
+				name: 'expiresIn',
+				type: 'number',
+				typeOptions: { minValue: 0, maxValue: 2592000 },
+				displayOptions: {
+					show: {
+						resource: ['screenshot'],
+						operation: ['renderLink'],
+					},
+				},
+				default: 0,
+				description:
+					'How long the signed link stays valid, in seconds (3600–2592000). Leave 0 to use the default (30 days).',
+			},
+
 			// ─── Screenshot: Additional Options ────────────────────────
 			{
 				displayName: 'Additional Options',
@@ -481,7 +504,7 @@ export class Rendex implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['screenshot'],
-						operation: ['capture', 'captureAsync'],
+						operation: ['capture', 'captureAsync', 'renderLink'],
 					},
 				},
 				options: [
@@ -1181,6 +1204,26 @@ export class Rendex implements INodeType {
 
 					returnData.push({
 						json: response,
+						pairedItem: { item: i },
+					});
+				} else if (resource === 'screenshot' && operation === 'renderLink') {
+					const body = buildCaptureBody.call(this, i);
+					const expiresIn = this.getNodeParameter('expiresIn', i, 0) as number;
+					if (expiresIn) body.expiresIn = expiresIn;
+
+					const response = (await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'rendexApi',
+						{
+							method: 'POST',
+							url: `${baseUrl}/v1/render/link`,
+							body,
+							json: true,
+						} as IHttpRequestOptions,
+					)) as { data?: IDataObject };
+
+					returnData.push({
+						json: (response.data ?? response) as IDataObject,
 						pairedItem: { item: i },
 					});
 				} else if (resource === 'document' && operation === 'extract') {
