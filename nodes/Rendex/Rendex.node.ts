@@ -175,6 +175,29 @@ const WATCH_OPTION_FIELDS: INodeProperties[] = [
 	},
 ];
 
+// The Watch Test dry-run only honors the render knobs (the same ones fed to the
+// renderer each check) — a test creates nothing, so the watch-only fields
+// (name/paused/threshold/webhookUrl/notifyEmail) are dropped from its inputs.
+// Derived from WATCH_OPTION_FIELDS so the field definitions stay single-sourced.
+const WATCH_TEST_RENDER_FIELD_NAMES = new Set<string>([
+	'format',
+	'fullPage',
+	'device',
+	'darkMode',
+	'blockAds',
+	'blockCookieBanners',
+	'selector',
+	'hideSelectors',
+	'geo',
+	'ignoreText',
+	'minTextChars',
+	'suppressWhilePresent',
+	'uaMode',
+]);
+const WATCH_TEST_OPTION_FIELDS: INodeProperties[] = WATCH_OPTION_FIELDS.filter((f) =>
+	WATCH_TEST_RENDER_FIELD_NAMES.has(f.name),
+);
+
 export class Rendex implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Rendex',
@@ -250,6 +273,12 @@ export class Rendex implements INodeType {
 						value: 'run',
 						description: 'Run an immediate check now (charges 1 credit)',
 						action: 'Run a watch now',
+					},
+					{
+						name: 'Test',
+						value: 'test',
+						description: 'Dry-run a config to preview what a watch would capture, without creating one',
+						action: 'Test a watch config',
 					},
 					{
 						name: 'Update',
@@ -1002,7 +1031,7 @@ export class Rendex implements INodeType {
 				description: 'The ID of the watch (from a Create or Get Many result)',
 			},
 
-			// ─── Watch: Create ─────────────────────────────────────────
+			// ─── Watch: Create / Test (shared URL + Change Detection) ──
 			{
 				displayName: 'URL',
 				name: 'url',
@@ -1010,7 +1039,7 @@ export class Rendex implements INodeType {
 				required: true,
 				default: '',
 				placeholder: 'https://example.com/pricing',
-				displayOptions: { show: { resource: ['watch'], operation: ['create'] } },
+				displayOptions: { show: { resource: ['watch'], operation: ['create', 'test'] } },
 				description: 'The page to monitor for changes',
 			},
 			{
@@ -1033,7 +1062,7 @@ export class Rendex implements INodeType {
 					{ name: 'Both', value: 'both' },
 				],
 				default: 'visual',
-				displayOptions: { show: { resource: ['watch'], operation: ['create'] } },
+				displayOptions: { show: { resource: ['watch'], operation: ['create', 'test'] } },
 				description: 'How changes are detected. Visual cannot monitor a PDF; text cannot be combined with geo.',
 			},
 			{
@@ -1044,6 +1073,17 @@ export class Rendex implements INodeType {
 				default: {},
 				displayOptions: { show: { resource: ['watch'], operation: ['create'] } },
 				options: WATCH_OPTION_FIELDS,
+			},
+
+			// ─── Watch: Test (render knobs only — no schedule/alert/threshold) ──
+			{
+				displayName: 'Additional Options',
+				name: 'watchTestOptions',
+				type: 'collection',
+				placeholder: 'Add Option',
+				default: {},
+				displayOptions: { show: { resource: ['watch'], operation: ['test'] } },
+				options: WATCH_TEST_OPTION_FIELDS,
 			},
 
 			// ─── Watch: Get Many ───────────────────────────────────────
@@ -1323,6 +1363,22 @@ export class Rendex implements INodeType {
 						this,
 						'rendexApi',
 						{ method: 'POST', url: `${baseUrl}/v1/watches`, body, json: true } as IHttpRequestOptions,
+					)) as { data?: IDataObject };
+					returnData.push({ json: (response.data ?? response) as IDataObject, pairedItem: { item: i } });
+				} else if (resource === 'watch' && operation === 'test') {
+					// Dry-run: preview what a watch would capture without creating one.
+					// Only url + diffMode + render knobs are sent; buildWatchBody nests the
+					// render knobs under `renderParams`.
+					const watchTestOptions = this.getNodeParameter('watchTestOptions', i, {}) as IDataObject;
+					const body = buildWatchBody({
+						url: this.getNodeParameter('url', i) as string,
+						diffMode: this.getNodeParameter('diffMode', i, 'visual') as string,
+						...watchTestOptions,
+					});
+					const response = (await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'rendexApi',
+						{ method: 'POST', url: `${baseUrl}/v1/watches/test`, body, json: true } as IHttpRequestOptions,
 					)) as { data?: IDataObject };
 					returnData.push({ json: (response.data ?? response) as IDataObject, pairedItem: { item: i } });
 				} else if (resource === 'watch' && operation === 'get') {
