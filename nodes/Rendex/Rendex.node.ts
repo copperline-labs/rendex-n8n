@@ -227,6 +227,8 @@ export class Rendex implements INodeType {
 				type: 'options',
 				noDataExpression: true,
 				options: [
+					{ name: 'Account', value: 'account' },
+					{ name: 'Artifact', value: 'artifact' },
 					{ name: 'Batch', value: 'batch' },
 					{ name: 'Document', value: 'document' },
 					{ name: 'Job', value: 'job' },
@@ -234,6 +236,44 @@ export class Rendex implements INodeType {
 					{ name: 'Watch', value: 'watch' },
 				],
 				default: 'screenshot',
+			},
+
+			// ─── Account Operations ────────────────────────────────────
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: { show: { resource: ['account'] } },
+				options: [
+					{
+						name: 'Get',
+						value: 'get',
+						description:
+							"Get the caller's plan, this month's usage, per-minute rate limit, and upgrade info (read-only, no credits)",
+						action: 'Get account plan and usage',
+					},
+				],
+				default: 'get',
+			},
+
+			// ─── Artifact Operations ───────────────────────────────────
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: { show: { resource: ['artifact'] } },
+				options: [
+					{
+						name: 'Create',
+						value: 'create',
+						description:
+							'Render a branded PDF/PNG artifact (plus a hosted share page) from Markdown or HTML in one call',
+						action: 'Create a branded artifact',
+					},
+				],
+				default: 'create',
 			},
 
 			// ─── Watch Operations ──────────────────────────────────────
@@ -1019,6 +1059,108 @@ export class Rendex implements INodeType {
 				],
 			},
 
+			// ─── Artifact: Create ──────────────────────────────────────
+			{
+				displayName: 'Content',
+				name: 'content',
+				type: 'string',
+				typeOptions: { rows: 6 },
+				required: true,
+				default: '',
+				displayOptions: { show: { resource: ['artifact'], operation: ['create'] } },
+				description: 'The Markdown or HTML body to turn into a branded artifact (up to ~4 MB)',
+			},
+			{
+				displayName: 'Input Format',
+				name: 'inputFormat',
+				type: 'options',
+				options: [
+					{ name: 'Markdown', value: 'markdown' },
+					{ name: 'HTML', value: 'html' },
+				],
+				default: 'markdown',
+				displayOptions: { show: { resource: ['artifact'], operation: ['create'] } },
+				description: 'Whether Content is Markdown (converted to styled HTML) or a raw HTML body fragment',
+			},
+			{
+				displayName: 'Output Formats',
+				name: 'formats',
+				type: 'multiOptions',
+				options: [
+					{ name: 'PDF', value: 'pdf' },
+					{ name: 'PNG', value: 'png' },
+				],
+				default: ['pdf', 'png'],
+				displayOptions: { show: { resource: ['artifact'], operation: ['create'] } },
+				description: 'Which hosted outputs to produce. Each requested format charges 1 credit.',
+			},
+			{
+				displayName: 'Additional Options',
+				name: 'artifactOptions',
+				type: 'collection',
+				placeholder: 'Add Option',
+				default: {},
+				displayOptions: { show: { resource: ['artifact'], operation: ['create'] } },
+				options: [
+					{
+						displayName: 'Accent Color',
+						name: 'accentColor',
+						type: 'color',
+						default: '',
+						placeholder: '#EA580C',
+						description: 'CSS color for the accent bar, links, and headings (e.g. #EA580C)',
+					},
+					{
+						displayName: 'Font',
+						name: 'font',
+						type: 'string',
+						default: '',
+						placeholder: 'Georgia, serif',
+						description: 'CSS font-family stack applied to the artifact body',
+					},
+					{
+						displayName: 'Footer',
+						name: 'footer',
+						type: 'string',
+						default: '',
+						description: 'Plain-text footer line shown at the bottom of every page',
+					},
+					{
+						displayName: 'Header',
+						name: 'header',
+						type: 'string',
+						default: '',
+						description:
+							'Plain-text header/brand line shown beside the logo and used as the share-page title',
+					},
+					{
+						displayName: 'Link Expiry (Seconds)',
+						name: 'expiresIn',
+						type: 'number',
+						typeOptions: { minValue: 3600, maxValue: 2592000 },
+						default: 86400,
+						description:
+							'How long the hosted artifact URLs stay valid, in seconds (3600–2592000). Defaults to 86400 (24h).',
+					},
+					{
+						displayName: 'Logo URL',
+						name: 'logo',
+						type: 'string',
+						default: '',
+						placeholder: 'https://example.com/logo.png',
+						description: 'Absolute http(s) URL of a logo image shown in the branded header',
+					},
+					{
+						displayName: 'Template Data (JSON)',
+						name: 'data',
+						type: 'json',
+						default: '{}',
+						description:
+							'Optional. JSON object of values to fill {{placeholders}} in Content (Mustache) before rendering.',
+					},
+				],
+			},
+
 			// ─── Watch: ID (get / update / delete / run) ───────────────
 			{
 				displayName: 'Watch ID',
@@ -1351,6 +1493,21 @@ export class Rendex implements INodeType {
 					)) as IDataObject;
 
 					returnData.push({ json: response, pairedItem: { item: i } });
+				} else if (resource === 'artifact' && operation === 'create') {
+					const body = buildArtifactBody.call(this, i);
+					const response = (await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'rendexApi',
+						{ method: 'POST', url: `${baseUrl}/v1/artifact`, body, json: true } as IHttpRequestOptions,
+					)) as { data?: IDataObject };
+					returnData.push({ json: (response.data ?? response) as IDataObject, pairedItem: { item: i } });
+				} else if (resource === 'account' && operation === 'get') {
+					const response = (await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'rendexApi',
+						{ method: 'GET', url: `${baseUrl}/v1/account`, json: true } as IHttpRequestOptions,
+					)) as { data?: IDataObject };
+					returnData.push({ json: (response.data ?? response) as IDataObject, pairedItem: { item: i } });
 				} else if (resource === 'watch' && operation === 'create') {
 					const watchOptions = this.getNodeParameter('watchOptions', i, {}) as IDataObject;
 					const body = buildWatchBody({
@@ -1622,6 +1779,56 @@ function buildExtractBody(this: IExecuteFunctions, itemIndex: number): IDataObje
 			.map((s) => s.trim())
 			.filter(Boolean);
 		if (selectors.length > 0) body.hideSelectors = selectors;
+	}
+
+	return body;
+}
+
+// Artifact branding sub-object keys. The live /v1/artifact schema nests these
+// under `branding` (logo/accentColor/font/header/footer). The older Make module
+// (rendex-make/modules/renderArtifact.json) used flat title/brandName/logoUrl/
+// theme names that the live API replaced with branding.header/branding.logo (and
+// dropped `theme`) — these are the authoritative names from openapi.yaml.
+const ARTIFACT_BRANDING_KEYS = ['logo', 'accentColor', 'font', 'header', 'footer'] as const;
+
+function buildArtifactBody(this: IExecuteFunctions, itemIndex: number): IDataObject {
+	const body: IDataObject = {
+		content: this.getNodeParameter('content', itemIndex) as string,
+		inputFormat: this.getNodeParameter('inputFormat', itemIndex, 'markdown') as string,
+	};
+
+	const formats = this.getNodeParameter('formats', itemIndex, ['pdf', 'png']) as string[];
+	if (Array.isArray(formats) && formats.length > 0) body.formats = formats;
+
+	const options = this.getNodeParameter('artifactOptions', itemIndex, {}) as IDataObject;
+
+	// Collect the optional branding fields into the nested `branding` object the
+	// API expects (omit it entirely when no branding field was supplied).
+	const branding: IDataObject = {};
+	for (const key of ARTIFACT_BRANDING_KEYS) {
+		const v = options[key];
+		if (v === undefined || v === null || v === '') continue;
+		branding[key] = v;
+	}
+	if (Object.keys(branding).length > 0) body.branding = branding;
+
+	const expiresIn = options.expiresIn;
+	if (typeof expiresIn === 'number' && expiresIn > 0) body.expiresIn = expiresIn;
+
+	// Optional Mustache template values, entered as a JSON object.
+	const dataRaw = options.data;
+	if (dataRaw !== undefined && dataRaw !== null && dataRaw !== '') {
+		const parsed =
+			typeof dataRaw === 'string'
+				? safeJsonParse.call<IExecuteFunctions, [string, IDataObject, string, number], IDataObject>(
+						this,
+						dataRaw,
+						{},
+						'Template Data (JSON)',
+						itemIndex,
+					)
+				: (dataRaw as IDataObject);
+		if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) body.data = parsed;
 	}
 
 	return body;
