@@ -1622,15 +1622,27 @@ export class Rendex implements INodeType {
 					);
 				}
 			} catch (error) {
+				// On a 429, surface Rendex's own upgrade nudge (rate-limit or monthly cap)
+				// — message + upgrade link straight from the API body — instead of a bare
+				// "429", so an n8n user hitting the free 10 req/min cap sees the reason and
+				// the upgrade path.
+				const nudge = extractUpgradeNudge(error);
 				if (this.continueOnFail()) {
 					returnData.push({
-						json: { error: (error as Error).message },
+						json: { error: nudge?.message ?? (error as Error).message },
 						pairedItem: { item: i },
 					});
 					continue;
 				}
 				if (error instanceof NodeOperationError || error instanceof NodeApiError) {
 					throw error;
+				}
+				if (nudge) {
+					throw new NodeApiError(this.getNode(), error as JsonObject, {
+						itemIndex: i,
+						message: nudge.message,
+						description: nudge.description,
+					});
 				}
 				throw new NodeApiError(this.getNode(), error as JsonObject, { itemIndex: i });
 			}
@@ -1941,4 +1953,35 @@ function safeJsonParse<T>(
 			{ itemIndex },
 		);
 	}
+}
+
+// ─── 429 upgrade nudge ──────────────────────────────────────────────
+// Pull Rendex's rate-limit / monthly-cap message + upgrade link out of a 429
+// error, robust to the several shapes n8n's HTTP helper wraps errors in. Returns
+// null for any non-429 so normal error handling is untouched.
+function extractUpgradeNudge(error: unknown): { message: string; description: string } | null {
+	const e = error as {
+		httpCode?: string | number;
+		statusCode?: number;
+		response?: { status?: number; statusCode?: number; body?: unknown; data?: unknown };
+		cause?: { response?: { body?: unknown } };
+	};
+	const status = Number(e?.httpCode ?? e?.statusCode ?? e?.response?.status ?? e?.response?.statusCode);
+	if (status !== 429) return null;
+	let body: unknown = e?.response?.body ?? e?.response?.data ?? e?.cause?.response?.body;
+	if (typeof body === 'string') {
+		try {
+			body = JSON.parse(body);
+		} catch {
+			body = undefined;
+		}
+	}
+	const apiErr = (body as { error?: { code?: string; message?: string; upgrade_url?: string } } | undefined)?.error;
+	const message = apiErr?.message ?? 'Rendex rate limit reached (the free plan allows 10 requests/minute).';
+	const upgradeUrl = apiErr?.upgrade_url ?? 'https://rendex.dev/pricing';
+	const description =
+		apiErr?.code === 'USAGE_EXCEEDED'
+			? `Your monthly Rendex credit pool is used up. Upgrade for a larger pool: ${upgradeUrl}`
+			: `Add a short delay between items, or upgrade for a higher rate limit: ${upgradeUrl}`;
+	return { message, description };
 }
