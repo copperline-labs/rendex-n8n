@@ -36,7 +36,7 @@ const WATCH_OPTION_FIELDS: INodeProperties[] = [
 		type: 'number',
 		typeOptions: { minValue: 0, maxValue: 1, numberPrecision: 4 },
 		default: 0.01,
-		description: 'Visual-change noise floor as a 0–1 fraction; the diff must exceed it to count as changed',
+		description: 'Visual sensitivity (0–1). Low (default 0.01) alerts on any change, including a small one on a long page (a changed-region test). 0.06+ = only major visual changes (whole-page ratio). Text detection is unaffected.',
 	},
 	{
 		displayName: 'Webhook URL',
@@ -1203,9 +1203,9 @@ export class Rendex implements INodeType {
 					{ name: 'Text (Extracted-Text Diff)', value: 'text' },
 					{ name: 'Both', value: 'both' },
 				],
-				default: 'visual',
+				default: 'both',
 				displayOptions: { show: { resource: ['watch'], operation: ['create', 'test'] } },
-				description: 'How changes are detected. Visual cannot monitor a PDF; text cannot be combined with geo.',
+				description: 'How changes are detected. Default Both = a pixel diff (with overlay) AND a full-page text diff, alerting on either — catches any change. Visual cannot monitor a PDF; text cannot be combined with geo.',
 			},
 			{
 				displayName: 'Additional Options',
