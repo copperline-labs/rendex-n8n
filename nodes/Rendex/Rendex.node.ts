@@ -54,6 +54,13 @@ const WATCH_OPTION_FIELDS: INodeProperties[] = [
 		description: 'Email to alert on a change (any plan). Must be your own account email; defaults to it if empty. On Update, enter "-" or "none" to clear a previously-set address.',
 	},
 	{
+		displayName: 'AI Summary',
+		name: 'aiSummary',
+		type: 'boolean',
+		default: false,
+		description: 'Whether to include an AI-written one-line "what changed" summary in the alert (Pro or Enterprise plan). Every plan already gets a free templated summary; this upgrades it to a natural-language sentence for text changes.',
+	},
+	{
 		displayName: 'Capture Format',
 		name: 'format',
 		type: 'options',
@@ -1856,6 +1863,7 @@ const WATCH_TOP_KEYS = [
 	'webhookUrl',
 	'notifyEmail',
 	'paused',
+	'aiSummary',
 ] as const;
 
 // …and render knobs that nest under `renderParams` (fed to the renderer each check).
