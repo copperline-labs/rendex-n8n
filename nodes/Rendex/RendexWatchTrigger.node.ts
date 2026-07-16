@@ -45,6 +45,9 @@ async function enrichChange(
 			diffOverlayUrl: run.diffOverlayUrl,
 			cropUrl: run.cropUrl,
 			changedRegion: run.changedRegion,
+			// One-line "what changed" summary (Pro+) — a text-only alert can post this
+			// straight to Slack/email with no image or dashboard.
+			aiSummary: run.aiSummary,
 			textDiff: run.textDiff,
 			completedAt: run.completedAt,
 		};
