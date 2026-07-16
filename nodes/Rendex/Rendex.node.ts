@@ -1206,9 +1206,9 @@ export class Rendex implements INodeType {
 				name: 'diffMode',
 				type: 'options',
 				options: [
+					{ name: 'Both (Visual + Text — Any Change)', value: 'both' },
 					{ name: 'Visual (Pixel Diff + Overlay)', value: 'visual' },
 					{ name: 'Text (Extracted-Text Diff)', value: 'text' },
-					{ name: 'Both', value: 'both' },
 				],
 				default: 'both',
 				displayOptions: { show: { resource: ['watch'], operation: ['create', 'test'] } },
@@ -1296,12 +1296,12 @@ export class Rendex implements INodeType {
 						name: 'diffMode',
 						type: 'options',
 						options: [
+							{ name: 'Both (Visual + Text — Any Change)', value: 'both' },
 							{ name: 'Visual (Pixel Diff + Overlay)', value: 'visual' },
 							{ name: 'Text (Extracted-Text Diff)', value: 'text' },
-							{ name: 'Both', value: 'both' },
 						],
-						default: 'visual',
-						description: 'How changes are detected',
+						default: 'both',
+						description: 'How changes are detected. Both = a pixel diff AND a full-page text diff, alerting on either. Leaving this out keeps the watch\'s current mode.',
 					},
 					...WATCH_OPTION_FIELDS,
 				],
@@ -1520,7 +1520,7 @@ export class Rendex implements INodeType {
 					const body = buildWatchBody({
 						url: this.getNodeParameter('url', i) as string,
 						intervalMinutes: this.getNodeParameter('intervalMinutes', i, 1440) as number,
-						diffMode: this.getNodeParameter('diffMode', i, 'visual') as string,
+						diffMode: this.getNodeParameter('diffMode', i, 'both') as string,
 						...watchOptions,
 					});
 					const response = (await this.helpers.httpRequestWithAuthentication.call(
@@ -1536,7 +1536,7 @@ export class Rendex implements INodeType {
 					const watchTestOptions = this.getNodeParameter('watchTestOptions', i, {}) as IDataObject;
 					const body = buildWatchBody({
 						url: this.getNodeParameter('url', i) as string,
-						diffMode: this.getNodeParameter('diffMode', i, 'visual') as string,
+						diffMode: this.getNodeParameter('diffMode', i, 'both') as string,
 						...watchTestOptions,
 					});
 					const response = (await this.helpers.httpRequestWithAuthentication.call(

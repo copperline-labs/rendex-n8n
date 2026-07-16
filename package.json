@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-rendex",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "n8n community node for Rendex — capture screenshots, generate PDFs, render HTML/Markdown, extract clean content, and monitor pages for changes (Rendex Watch) via Rendex's rendering API",
   "keywords": [
     "n8n-community-node-package",
