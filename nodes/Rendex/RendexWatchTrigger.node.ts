@@ -43,6 +43,8 @@ async function enrichChange(
 			beforeUrl: run.beforeUrl,
 			afterUrl: run.afterUrl,
 			diffOverlayUrl: run.diffOverlayUrl,
+			cropUrl: run.cropUrl,
+			changedRegion: run.changedRegion,
 			textDiff: run.textDiff,
 			completedAt: run.completedAt,
 		};
