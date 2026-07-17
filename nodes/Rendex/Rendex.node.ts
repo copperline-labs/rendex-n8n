@@ -1631,7 +1631,7 @@ export class Rendex implements INodeType {
 			} catch (error) {
 				// On a 429, surface Rendex's own upgrade nudge (rate-limit or monthly cap)
 				// — message + upgrade link straight from the API body — instead of a bare
-				// "429", so an n8n user hitting the free 10 req/min cap sees the reason and
+				// "429", so an n8n user hitting the free 3 req/min cap sees the reason and
 				// the upgrade path.
 				const nudge = extractUpgradeNudge(error);
 				if (this.continueOnFail()) {
@@ -1985,7 +1985,7 @@ function extractUpgradeNudge(error: unknown): { message: string; description: st
 		}
 	}
 	const apiErr = (body as { error?: { code?: string; message?: string; upgrade_url?: string } } | undefined)?.error;
-	const message = apiErr?.message ?? 'Rendex rate limit reached (the free plan allows 10 requests/minute).';
+	const message = apiErr?.message ?? 'Rendex rate limit reached (the free plan allows 3 requests/minute).';
 	const upgradeUrl = apiErr?.upgrade_url ?? 'https://rendex.dev/pricing';
 	const description =
 		apiErr?.code === 'USAGE_EXCEEDED'
