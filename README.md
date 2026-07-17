@@ -152,9 +152,9 @@ A separate **trigger** node that starts your workflow when a monitored page chan
 
 | Limit | Free | Starter | Pro | Enterprise |
 |---|---|---|---|---|
-| Rate limit (req/min) | 10 | 60 | 300 | 1000 |
-| Batch size | 5 | 25 | 100 | 500 |
-| Concurrent async jobs | 10 | 50 | 200 | 1000 |
+| Rate limit (req/min) | 3 | 60 | 300 | 1000 |
+| Batch size | — | 25 | 100 | 500 |
+| Concurrent async jobs | 3 | 50 | 200 | 1000 |
 | Geo-targeting | — | — | ✓ | ✓ |
 
 See [rendex.dev/pricing](https://rendex.dev/pricing) for current pricing.
