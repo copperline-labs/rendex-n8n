@@ -7,7 +7,7 @@ import type {
 	IPollFunctions,
 	JsonObject,
 } from 'n8n-workflow';
-import { NodeApiError } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
 
 /**
  * Best-effort change enrichment. Given a watchId, fetch its latest runs and
@@ -79,7 +79,9 @@ export class RendexWatchTrigger implements INodeType {
 		},
 		polling: true,
 		inputs: [],
-		outputs: ['main'],
+		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong -- @n8n/scan-community-package requires the NodeConnectionTypes enum, not the legacy string literal the local plugin wants
+		outputs: [NodeConnectionTypes.Main],
+		usableAsTool: true,
 		credentials: [
 			{
 				name: 'rendexApi',

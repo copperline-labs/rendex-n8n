@@ -8,7 +8,7 @@ import type {
 	INodeTypeDescription,
 	JsonObject,
 } from 'n8n-workflow';
-import { NodeApiError, NodeOperationError } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 // Shared optional fields for the Watch Create + Update collections. The render
 // knobs (format/fullPage/device/…/uaMode) are nested under `renderParams` by
@@ -217,8 +217,10 @@ export class Rendex implements INodeType {
 		defaults: {
 			name: 'Rendex',
 		},
-		inputs: ['main'],
-		outputs: ['main'],
+		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node -- @n8n/scan-community-package requires the NodeConnectionTypes enum, not the legacy string literal the local plugin wants
+		inputs: [NodeConnectionTypes.Main],
+		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong -- @n8n/scan-community-package requires the NodeConnectionTypes enum, not the legacy string literal the local plugin wants
+		outputs: [NodeConnectionTypes.Main],
 		usableAsTool: true,
 		credentials: [
 			{
@@ -1207,8 +1209,8 @@ export class Rendex implements INodeType {
 				type: 'options',
 				options: [
 					{ name: 'Both (Visual + Text — Any Change)', value: 'both' },
-					{ name: 'Visual (Pixel Diff + Overlay)', value: 'visual' },
 					{ name: 'Text (Extracted-Text Diff)', value: 'text' },
+					{ name: 'Visual (Pixel Diff + Overlay)', value: 'visual' },
 				],
 				default: 'both',
 				displayOptions: { show: { resource: ['watch'], operation: ['create', 'test'] } },
@@ -1297,8 +1299,8 @@ export class Rendex implements INodeType {
 						type: 'options',
 						options: [
 							{ name: 'Both (Visual + Text — Any Change)', value: 'both' },
-							{ name: 'Visual (Pixel Diff + Overlay)', value: 'visual' },
 							{ name: 'Text (Extracted-Text Diff)', value: 'text' },
+							{ name: 'Visual (Pixel Diff + Overlay)', value: 'visual' },
 						],
 						default: 'both',
 						description: 'How changes are detected. Both = a pixel diff AND a full-page text diff, alerting on either. Leaving this out keeps the watch\'s current mode.',
@@ -1641,9 +1643,8 @@ export class Rendex implements INodeType {
 					});
 					continue;
 				}
-				if (error instanceof NodeOperationError || error instanceof NodeApiError) {
-					throw error;
-				}
+				if (error instanceof NodeOperationError) throw error;
+				if (error instanceof NodeApiError) throw error;
 				if (nudge) {
 					throw new NodeApiError(this.getNode(), error as JsonObject, {
 						itemIndex: i,
