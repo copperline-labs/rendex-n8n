@@ -46,6 +46,29 @@ npm install n8n-nodes-rendex
 
 ---
 
+## Ready-made workflow templates
+
+Skip the blank canvas — import a complete, sticky-noted workflow, add your Rendex
+API credential, and run. Download the JSON, then in n8n use **Workflows → Import
+from File** (or drag it onto the canvas):
+
+| Template | What it does |
+| --- | --- |
+| [Invoice → PDF → email](https://rendex.dev/n8n/templates/invoice-html-to-pdf.json) | Render order data into a branded PDF invoice and email it |
+| [Watch a page → Slack](https://rendex.dev/n8n/templates/watch-page-to-slack.json) | Monitor any page for changes and post the diff to Slack |
+| [Scheduled screenshot → Drive](https://rendex.dev/n8n/templates/screenshot-schedule-archive.json) | Capture a URL on a schedule and archive it to Google Drive |
+| [OG image per post](https://rendex.dev/n8n/templates/og-image-render-link.json) | Mint a hosted `og:image` URL for every blog post |
+| [Extract URL → AI summary](https://rendex.dev/n8n/templates/extract-url-for-ai.json) | Pull clean Markdown from a page and summarize it with an LLM |
+| [Report → branded PDF + link](https://rendex.dev/n8n/templates/artifact-report-to-pdf.json) | Turn Markdown into a branded PDF, PNG, and hosted share page |
+| [Bulk screenshots from Sheets](https://rendex.dev/n8n/templates/batch-screenshots-from-sheet.json) | Batch-capture a list of URLs at scale (Starter+) |
+| [AI agent render tool](https://rendex.dev/n8n/templates/ai-agent-render-tool.json) | An AI Agent that screenshots/renders pages on demand |
+| [Geo screenshot compare](https://rendex.dev/n8n/templates/geo-screenshot-compare.json) | Capture a page from multiple countries and compare (Pro+) |
+| [Screenshot behind login](https://rendex.dev/n8n/templates/screenshot-behind-login.json) | Capture an authenticated page using session cookies (Starter+) |
+
+Browse them with previews at **[rendex.dev/docs/n8n#templates](https://rendex.dev/docs/n8n#templates)**.
+
+---
+
 ## Authentication
 
 1. Sign in to [rendex.dev/dashboard](https://rendex.dev/dashboard) (free plan available)
