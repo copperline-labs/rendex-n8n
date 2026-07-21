@@ -65,10 +65,10 @@ const WATCH_OPTION_FIELDS: INodeProperties[] = [
 		name: 'format',
 		type: 'options',
 		options: [
-			{ name: 'PNG', value: 'png' },
 			{ name: 'JPEG', value: 'jpeg' },
-			{ name: 'WebP', value: 'webp' },
 			{ name: 'PDF', value: 'pdf' },
+			{ name: 'PNG', value: 'png' },
+			{ name: 'WebP', value: 'webp' },
 		],
 		default: 'png',
 		description: 'A PDF can only be paired with text change-detection (it cannot be visually diffed)',
@@ -209,7 +209,7 @@ export class Rendex implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Rendex',
 		name: 'rendex',
-		icon: 'file:rendex.svg',
+		icon: { light: 'file:rendex-light.svg', dark: 'file:rendex-dark.svg' },
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
@@ -415,16 +415,16 @@ export class Rendex implements INodeType {
 				displayOptions: { show: { resource: ['batch'] } },
 				options: [
 					{
-						name: 'Submit',
-						value: 'submit',
-						description: 'Submit a batch of URLs for capture (up to 500 per plan limit)',
-						action: 'Submit a batch',
-					},
-					{
 						name: 'Get Status',
 						value: 'getStatus',
 						description: 'Poll the status of a batch and its jobs',
 						action: 'Get batch status',
+					},
+					{
+						name: 'Submit',
+						value: 'submit',
+						description: 'Submit a batch of URLs for capture (up to 500 per plan limit)',
+						action: 'Submit a batch',
 					},
 				],
 				default: 'submit',
@@ -437,9 +437,9 @@ export class Rendex implements INodeType {
 				type: 'options',
 				displayOptions: { show: { resource: ['screenshot'] } },
 				options: [
-					{ name: 'URL', value: 'url' },
 					{ name: 'HTML', value: 'html' },
 					{ name: 'Markdown', value: 'markdown' },
+					{ name: 'URL', value: 'url' },
 				],
 				default: 'url',
 				description: 'Whether to capture a live URL, render raw HTML, or render Markdown',
@@ -515,10 +515,10 @@ export class Rendex implements INodeType {
 				type: 'options',
 				displayOptions: { show: { resource: ['screenshot'] } },
 				options: [
-					{ name: 'PNG', value: 'png' },
 					{ name: 'JPEG', value: 'jpeg' },
-					{ name: 'WebP', value: 'webp' },
 					{ name: 'PDF', value: 'pdf' },
+					{ name: 'PNG', value: 'png' },
+					{ name: 'WebP', value: 'webp' },
 				],
 				default: 'png',
 				description: 'Output format. PDF ignores image-specific options and uses PDF options instead.',
@@ -981,9 +981,9 @@ export class Rendex implements INodeType {
 				name: 'extractFormat',
 				type: 'options',
 				options: [
-					{ name: 'Markdown', value: 'markdown' },
-					{ name: 'JSON', value: 'json' },
 					{ name: 'HTML', value: 'html' },
+					{ name: 'JSON', value: 'json' },
+					{ name: 'Markdown', value: 'markdown' },
 				],
 				default: 'markdown',
 				displayOptions: {
@@ -1084,8 +1084,8 @@ export class Rendex implements INodeType {
 				name: 'inputFormat',
 				type: 'options',
 				options: [
-					{ name: 'Markdown', value: 'markdown' },
 					{ name: 'HTML', value: 'html' },
+					{ name: 'Markdown', value: 'markdown' },
 				],
 				default: 'markdown',
 				displayOptions: { show: { resource: ['artifact'], operation: ['create'] } },
@@ -1243,8 +1243,8 @@ export class Rendex implements INodeType {
 				name: 'status',
 				type: 'options',
 				options: [
-					{ name: 'All', value: 'all' },
 					{ name: 'Active', value: 'active' },
+					{ name: 'All', value: 'all' },
 					{ name: 'Paused', value: 'paused' },
 				],
 				default: 'all',

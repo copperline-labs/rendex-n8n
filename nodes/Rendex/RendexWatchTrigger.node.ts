@@ -69,7 +69,7 @@ export class RendexWatchTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Rendex Watch Trigger',
 		name: 'rendexWatchTrigger',
-		icon: 'file:rendex.svg',
+		icon: { light: 'file:rendex-light.svg', dark: 'file:rendex-dark.svg' },
 		group: ['trigger'],
 		version: 1,
 		subtitle: '={{"When a watched page changes"}}',

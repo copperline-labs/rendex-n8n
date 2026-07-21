@@ -12,7 +12,7 @@ export class RendexApi implements ICredentialType {
 
 	documentationUrl = 'https://rendex.dev/docs/authentication';
 
-	icon = 'file:rendex.svg' as const;
+	icon = { light: 'file:rendex-light.svg', dark: 'file:rendex-dark.svg' } as const;
 
 	properties: INodeProperties[] = [
 		{
