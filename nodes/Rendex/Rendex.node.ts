@@ -1643,8 +1643,10 @@ export class Rendex implements INodeType {
 					});
 					continue;
 				}
-				if (error instanceof NodeOperationError) throw error;
-				if (error instanceof NodeApiError) throw error;
+				// All caught errors are re-thrown as NodeApiError below (both the nudge
+				// and plain branches) — the marketplace `require-node-api-error` rule
+				// disallows a bare `throw error` in a catch even when it's already the
+				// right type, and NodeApiError safely wraps a NodeOperationError too.
 				if (nudge) {
 					throw new NodeApiError(this.getNode(), error as JsonObject, {
 						itemIndex: i,
