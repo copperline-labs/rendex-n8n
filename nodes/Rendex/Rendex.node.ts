@@ -1201,7 +1201,7 @@ export class Rendex implements INodeType {
 				default: 1440,
 				displayOptions: { show: { resource: ['watch'], operation: ['create'] } },
 				description:
-					"How often to check, in minutes. The minimum is your plan's floor — Free 1440 (daily), Starter 180, Pro 30, Enterprise 5. A faster value is rejected with WATCH_INTERVAL_TOO_FAST.",
+					"How often to check, in minutes. The minimum is your plan's floor — Free 1440 (daily), Basic 180, Starter 180, Pro 30, Enterprise 5. A faster value is rejected with WATCH_INTERVAL_TOO_FAST.",
 			},
 			{
 				displayName: 'Change Detection',
