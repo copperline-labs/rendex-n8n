@@ -1,10 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect x="0.5" y="0.5" width="31" height="31" rx="6" fill="#1c1917" stroke="#44403c" stroke-width="1"/>
   <defs>
-    <linearGradient id="rendexGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#F97316"/>
-      <stop offset="100%" stop-color="#22D3EE"/>
+    <linearGradient id="rendexDarkBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a1a0e"/>
+      <stop offset="48%" stop-color="#0c0a09"/>
+      <stop offset="100%" stop-color="#0a1417"/>
     </linearGradient>
   </defs>
-  <text x="16" y="24" text-anchor="middle" fill="url(#rendexGrad)" font-size="24" font-weight="800" font-family="system-ui, -apple-system, sans-serif">R</text>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6" fill="url(#rendexDarkBg)" stroke="#44403c" stroke-width="1"/>
+  <text x="16" y="24" text-anchor="middle" fill="#EA580C" font-size="24" font-weight="800" font-family="system-ui, -apple-system, sans-serif">R</text>
 </svg>
