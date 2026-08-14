@@ -121,7 +121,7 @@ Monitor a URL on a schedule and detect when it changes — real-Chrome **visual*
 | **Update** | Change the URL, interval, mode, alerts, or pause/resume. |
 | **Delete** | Remove a watch and its run history. |
 
-> **Plan walls:** the minimum check interval is your plan's floor (Free daily / Starter 3h / Pro 30 min / Enterprise 5 min). Webhook alerts need Starter+; email alerts and the visual/text diff work on every plan.
+> **Plan walls:** the minimum check interval is your plan's floor (Free daily / Basic 3h / Starter 1h / Pro 30 min / Enterprise 5 min). Webhook alerts (Watch, and async/batch completion) need Starter+; email alerts and the visual/text diff work on every plan.
 
 ### Rendex Watch Trigger
 
